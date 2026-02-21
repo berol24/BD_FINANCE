@@ -1,0 +1,28 @@
+<div class="bg-white rounded-lg shadow-md p-6">
+  <h2 class="text-xl font-bold mb-6 text-gray-800">Évolution Recettes/Dépenses</h2>
+  <div class="overflow-x-auto">
+    <div class="inline-flex space-x-4 pb-4">
+      <div *ngFor="let item of chartData" class="flex-shrink-0">
+        <div class="text-center">
+          <p class="font-semibold text-gray-700 mb-2">{{ item.label }}</p>
+          <div class="flex items-end space-x-2" style="height: 100px">
+            <div class="flex flex-col items-center">
+              <div
+                class="bg-green-500 rounded-t"
+                [style.height.%]="(item.recettes / 3000) * 100 || 10"
+              ></div>
+              <p class="text-xs mt-1 text-green-600 font-semibold">{{ item.recettes | number: '1.0-0' }}€</p>
+            </div>
+            <div class="flex flex-col items-center">
+              <div
+                class="bg-red-500 rounded-t"
+                [style.height.%]="(item.depenses / 3000) * 100 || 10"
+              ></div>
+              <p class="text-xs mt-1 text-red-600 font-semibold">{{ item.depenses | number: '1.0-0' }}€</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

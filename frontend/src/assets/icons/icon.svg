@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <!-- Background -->
+  <rect width="192" height="192" fill="#1e3a8a" rx="45"/>
+  <!-- Coins icon -->
+  <circle cx="60" cy="60" r="20" fill="#10b981" stroke="#ffffff" stroke-width="2"/>
+  <circle cx="132" cy="60" r="20" fill="#ef4444" stroke="#ffffff" stroke-width="2"/>
+  <circle cx="96" cy="120" r="20" fill="#3b82f6" stroke="#ffffff" stroke-width="2"/>
+  <!-- Text -->
+  <text x="96" y="160" font-size="24" font-weight="bold" fill="#ffffff" text-anchor="middle">BD</text>
+</svg>

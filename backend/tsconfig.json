@@ -33,5 +33,11 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "verbatimModuleSyntax": false,
+      "module": "commonjs"
+    }
   }
 }

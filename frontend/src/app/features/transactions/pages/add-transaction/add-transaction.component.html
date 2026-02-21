@@ -1,0 +1,100 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-8">
+  <div class="max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <h1 class="text-3xl font-bold text-slate-800">
+        Ajouter une {{ type === 'recette' ? 'Recette' : 'Dépense' }}
+      </h1>
+      <button
+        (click)="goBack()"
+        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
+      >
+        ← Retour
+      </button>
+    </div>
+
+    <!-- Error Message -->
+    <div
+      *ngIf="error"
+      class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg border border-red-300"
+    >
+      {{ error }}
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8">
+      <form (ngSubmit)="onSubmit()" class="space-y-6">
+        <!-- Montant -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">
+            Montant (€)
+          </label>
+          <input
+            type="number"
+            [(ngModel)]="amount"
+            name="amount"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none transition"
+          />
+        </div>
+
+        <!-- Catégorie -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">
+            Catégorie
+          </label>
+          <select
+            [(ngModel)]="categoryId"
+            name="categoryId"
+            class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none transition"
+          >
+            <option value="" disabled>-- Sélectionner une catégorie --</option>
+            <option *ngFor="let cat of categories" [value]="cat.id">
+              {{ cat.nom }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-2">
+            Description (optionnel)
+          </label>
+          <textarea
+            [(ngModel)]="description"
+            name="description"
+            placeholder="Ajouter une note..."
+            rows="4"
+            class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none transition resize-none"
+          ></textarea>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex gap-4 pt-4">
+          <button
+            type="submit"
+            [disabled]="loading"
+            [class.opacity-50]="loading"
+            [class.cursor-not-allowed]="loading"
+            [ngClass]="{
+              'bg-green-500 hover:bg-green-600': type === 'recette',
+              'bg-red-500 hover:bg-red-600': type === 'depense',
+            }"
+            class="flex-1 px-6 py-3 text-white font-semibold rounded-lg transition disabled:hover:bg-current"
+          >
+            {{ loading ? 'Création...' : 'Ajouter' }}
+          </button>
+          <button
+            type="button"
+            (click)="goBack()"
+            class="flex-1 px-6 py-3 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition"
+          >
+            Annuler
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

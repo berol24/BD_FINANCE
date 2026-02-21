@@ -1,0 +1,13 @@
+<div [ngClass]="bgClass" class="relative text-white rounded-2xl shadow-xl p-8 overflow-hidden group hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+  <!-- Background effect -->
+  <div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+  
+  <!-- Content -->
+  <div class="relative z-10 flex justify-between items-start">
+    <div>
+      <p class="text-sm font-semibold text-white/80 uppercase tracking-wider">{{ title }}</p>
+      <p class="text-5xl font-black mt-3">{{ amount | number: '1.2-2' }} <span class="text-2xl">€</span></p>
+    </div>
+    <span class="text-5xl filter drop-shadow-lg">{{ icon }}</span>
+  </div>
+</div>

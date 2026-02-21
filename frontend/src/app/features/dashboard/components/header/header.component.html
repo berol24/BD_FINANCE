@@ -1,0 +1,43 @@
+<header class="sticky top-0 z-50 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl border-b border-slate-700">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <!-- Logo & Branding -->
+      <div class="flex items-center gap-3">
+        <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-blue-500 shadow-lg">
+          <span class="text-xl font-bold">💰</span>
+        </div>
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-black bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">BD Finance</h1>
+          <p class="text-xs sm:text-sm text-slate-400 font-medium">Gestion intelligente de vos finances</p>
+        </div>
+      </div>
+
+      <!-- Right Section -->
+      <div class="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+        <!-- User Info -->
+        <div class="flex-1 sm:flex-none text-right hidden sm:block">
+          <p class="text-sm font-semibold text-slate-200">{{ user?.prenom }} {{ user?.nom }}</p>
+          <p class="text-xs text-slate-400">Connecté</p>
+        </div>
+        
+        <!-- Install Button -->
+        <button
+          *ngIf="canInstall"
+          (click)="onInstall()"
+          class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-emerald-500/50 text-sm whitespace-nowrap"
+          title="Installer l'application sur votre appareil"
+        >
+          📱 Installer
+        </button>
+
+        <!-- Logout Button -->
+        <button
+          (click)="onLogout()"
+          class="px-4 py-2 bg-gradient-to-r from-red-500/20 to-red-600/20 hover:from-red-500/40 hover:to-red-600/40 text-red-300 hover:text-red-200 font-semibold rounded-lg transition-all duration-200 border border-red-500/30 hover:border-red-500/60 text-sm whitespace-nowrap"
+        >
+          🚪 Déconnexion
+        </button>
+      </div>
+    </div>
+  </div>
+</header>

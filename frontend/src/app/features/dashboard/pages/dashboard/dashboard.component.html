@@ -1,0 +1,59 @@
+<div class="min-h-screen bg-gray-50">
+  <app-header [user]="user" (logout)="logout()"></app-header>
+
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <div *ngIf="loading" class="text-center py-12">
+      <p class="text-gray-600">Chargement...</p>
+    </div>
+
+    <div *ngIf="!loading" class="space-y-8">
+      <!-- Add Transaction Form -->
+      <app-add-transaction-form 
+        [editingTransaction]="editingTransaction"
+        (success)="onTransactionAdded()"
+      ></app-add-transaction-form>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <app-stats
+          title="Total Recettes"
+          [amount]="totalRecettes"
+          icon="📈"
+          color="success"
+        ></app-stats>
+        <app-stats
+          title="Total Dépenses"
+          [amount]="totalDepenses"
+          icon="📉"
+          color="danger"
+        ></app-stats>
+      </div>
+
+      <!-- Solde -->
+      <div class="bg-blue-500 text-white rounded-lg shadow-md p-6">
+        <p class="text-lg font-semibold">Solde Actuel: {{ solde | number: '1.2-2' }} €</p>
+      </div>
+
+      <!-- Chart -->
+      <app-chart [transactions]="transactions" [categories]="categories"></app-chart>
+
+      <!-- Transactions -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <app-transaction-table
+          title="Dernières Recettes"
+          [transactions]="recettes"
+          [categories]="categories"
+          (delete)="onDeleteTransaction($event)"
+          (edit)="onEditTransaction($event)"
+        ></app-transaction-table>
+        <app-transaction-table
+          title="Dernières Dépenses"
+          [transactions]="depenses"
+          [categories]="categories"
+          (delete)="onDeleteTransaction($event)"
+          (edit)="onEditTransaction($event)"
+        ></app-transaction-table>
+      </div>
+    </div>
+  </main>
+</div>

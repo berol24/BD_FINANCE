@@ -1,0 +1,60 @@
+<div class="bg-white rounded-lg shadow-md overflow-x-auto">
+  <div class="p-6">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">{{ title }}</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-blue-100 border-b-2 border-blue-300">
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Date</th>
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Désignation</th>
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Quantité</th>
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Prix Unit.</th>
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Montant</th>
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Catégorie</th>
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let transaction of displayedTransactions" class="border-b hover:bg-gray-50">
+            <td class="px-3 sm:px-4 py-3">
+              {{ (transaction.date | date: 'dd/MM/yyyy') || '-' }}
+            </td>
+            <td class="px-3 sm:px-4 py-3">
+              {{ transaction.designation }}
+            </td>
+            <td class="px-3 sm:px-4 py-3">
+              {{ transaction.quantite }}
+            </td>
+            <td class="px-3 sm:px-4 py-3">
+              {{ transaction.prix_unitaire | number: '1.2-2' }} €
+            </td>
+            <td class="px-3 sm:px-4 py-3 font-semibold text-blue-600">
+              {{ (transaction.quantite * transaction.prix_unitaire) | number: '1.2-2' }} €
+            </td>
+            <td class="px-3 sm:px-4 py-3">
+              {{ getCategoryName(transaction.categorie_id) }}
+            </td>
+            <td class="px-3 sm:px-4 py-3">
+              <div class="flex gap-2 flex-wrap">
+                <button
+                  (click)="onEdit(transaction)"
+                  class="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-blue-500 hover:bg-blue-600 text-white rounded transition"
+                  title="Modifier"
+                >
+                  ✏️
+                </button>
+                <button
+                  (click)="onDelete(transaction.id)"
+                  class="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-red-500 hover:bg-red-600 text-white rounded transition"
+                  title="Supprimer"
+                >
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
