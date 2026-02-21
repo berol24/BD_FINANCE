@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common'
 export class StatsComponent {
   @Input() title = ''
   @Input() amount = 0
-  @Input() icon = '📊'
+  @Input() icon = 'trend-up'
   @Input() color: 'success' | 'danger' | 'warning' | 'primary' = 'primary'
 
   get bgClass(): string {

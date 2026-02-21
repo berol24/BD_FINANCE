@@ -4,7 +4,11 @@
       <!-- Logo & Branding -->
       <div class="flex items-center gap-3">
         <div class="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-blue-500 shadow-lg">
-          <span class="text-xl font-bold">💰</span>
+          <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="6" width="20" height="12" rx="2" />
+            <circle cx="12" cy="12" r="3" />
+            <path d="M6 10h.01M6 14h.01M18 10h.01M18 14h.01" />
+          </svg>
         </div>
         <div>
           <h1 class="text-2xl sm:text-3xl font-black bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent">BD Finance</h1>
@@ -27,7 +31,15 @@
           class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-emerald-500/50 text-sm whitespace-nowrap"
           title="Installer l'application sur votre appareil"
         >
-          📱 Installer
+          <span class="inline-flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 16V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8" />
+              <path d="M7 20h10" />
+              <path d="M12 16v4" />
+              <path d="M12 12l-3 3h6z" />
+            </svg>
+            Installer
+          </span>
         </button>
 
         <!-- Logout Button -->
@@ -35,7 +47,14 @@
           (click)="onLogout()"
           class="px-4 py-2 bg-gradient-to-r from-red-500/20 to-red-600/20 hover:from-red-500/40 hover:to-red-600/40 text-red-300 hover:text-red-200 font-semibold rounded-lg transition-all duration-200 border border-red-500/30 hover:border-red-500/60 text-sm whitespace-nowrap"
         >
-          🚪 Déconnexion
+          <span class="inline-flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <path d="M16 17l5-5-5-5" />
+              <path d="M21 12H9" />
+            </svg>
+            Deconnexion
+          </span>
         </button>
       </div>
     </div>

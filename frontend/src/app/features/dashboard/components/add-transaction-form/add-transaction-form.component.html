@@ -1,10 +1,10 @@
-<div class="bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-xl p-8 mb-8 border border-slate-200/50">
+<div class="bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-xl p-8 mb-8 border border-slate-200/50 animate-fade-up">
   <!-- Header -->
   <div class="mb-8">
     <h2 class="text-3xl font-black text-slate-900 mb-2">
-      {{ editingTransaction ? '✏️ Modifier' : '➕ Nouvelle Transaction' }}
+      {{ editingTransaction ? 'Modifier la transaction' : 'Nouvelle transaction' }}
     </h2>
-    <p class="text-slate-500 text-sm">{{ editingTransaction ? 'Mettez à jour votre transaction' : 'Ajoutez une nouvelle transaction à votre portefeuille' }}</p>
+    <p class="text-slate-500 text-sm">{{ editingTransaction ? 'Mettez a jour votre transaction' : 'Ajoutez une nouvelle transaction a votre portefeuille' }}</p>
   </div>
 
   <!-- Error Message -->
@@ -12,13 +12,17 @@
     *ngIf="error"
     class="mb-6 p-4 bg-gradient-to-r from-red-50 to-red-100 text-red-700 rounded-xl border border-red-200 flex items-center gap-3"
   >
-    <span class="text-xl">⚠️</span>
+    <svg class="w-5 h-5 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 8v4" />
+      <path d="M12 16h.01" />
+    </svg>
     <span class="font-semibold">{{ error }}</span>
   </div>
 
   <!-- Form -->
   <form (ngSubmit)="onSubmit()" class="space-y-6">
-    <!-- Type Selection (Recette/Dépense) -->
+    <!-- Type Selection (Recette/Depense) -->
     <div>
       <label class="block text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">Type de transaction</label>
       <div class="flex gap-3">
@@ -27,12 +31,18 @@
           (click)="type = 'recette'; onTypeChange()"
           [class.ring-2]="type === 'recette'"
           [class.ring-emerald-500]="type === 'recette'"
-          class="flex-1 py-3  px-4 rounded-xl font-bold transition-all duration-200 transform hover:scale-105"
-          [ngClass]="type === 'recette' 
-            ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30' 
+          class="flex-1 py-3 px-4 rounded-xl font-bold transition-all duration-200 transform hover:scale-105"
+          [ngClass]="type === 'recette'
+            ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30'
             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
         >
-          📈 Recette
+          <span class="inline-flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 17l6-6 4 4 7-7" />
+              <path d="M14 7h7v7" />
+            </svg>
+            Recette
+          </span>
         </button>
         <button
           type="button"
@@ -40,11 +50,17 @@
           [class.ring-2]="type === 'depense'"
           [class.ring-red-500]="type === 'depense'"
           class="flex-1 py-3 px-4 rounded-xl font-bold transition-all duration-200 transform hover:scale-105"
-          [ngClass]="type === 'depense' 
-            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30' 
+          [ngClass]="type === 'depense'
+            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/30'
             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
         >
-          📉 Dépense
+          <span class="inline-flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 7l6 6 4-4 7 7" />
+              <path d="M14 17h7v-7" />
+            </svg>
+            Depense
+          </span>
         </button>
       </div>
     </div>
@@ -53,7 +69,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <!-- Date -->
       <div>
-        <label class="block text-sm font-bold text-slate-700 mb-2">📅 Date</label>
+        <label class="block text-sm font-bold text-slate-700 mb-2">Date</label>
         <input
           type="date"
           [(ngModel)]="date"
@@ -64,7 +80,7 @@
 
       <!-- Designation -->
       <div>
-        <label class="block text-sm font-bold text-slate-700 mb-2">📝 Désignation</label>
+        <label class="block text-sm font-bold text-slate-700 mb-2">Designation</label>
         <input
           type="text"
           [(ngModel)]="designation"
@@ -75,37 +91,10 @@
       </div>
     </div>
 
-    <!-- Date -->
-    <div>
-      <label class="block text-sm font-semibold text-slate-700 mb-2">
-        Date
-      </label>
-      <input
-        type="date"
-        [(ngModel)]="date"
-        name="date"
-        class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none transition"
-      />
-    </div>
-
-    <!-- Designation -->
-    <div>
-      <label class="block text-sm font-semibold text-slate-700 mb-2">
-        Désignation (description)
-      </label>
-      <input
-        type="text"
-        [(ngModel)]="designation"
-        name="designation"
-        placeholder="Ex: Salaire, Courses, Loyer..."
-        class="w-full px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none transition"
-      />
-    </div>
-
-    <!-- Quantité et Prix Unitaire -->
+    <!-- Quantite et Prix Unitaire -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <label class="block text-sm font-bold text-slate-700 mb-2">📦 Quantité</label>
+        <label class="block text-sm font-bold text-slate-700 mb-2">Quantite</label>
         <input
           type="number"
           [(ngModel)]="quantite"
@@ -117,7 +106,7 @@
       </div>
 
       <div>
-        <label class="block text-sm font-bold text-slate-700 mb-2">💰 Prix Unitaire</label>
+        <label class="block text-sm font-bold text-slate-700 mb-2">Prix unitaire</label>
         <div class="relative">
           <input
             type="number"
@@ -128,89 +117,109 @@
             placeholder="0.00"
             class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none transition text-slate-900 font-semibold pr-8"
           />
-          <span class="absolute right-4 top-3.5 text-slate-500 font-bold text-sm">€</span>
+          <span class="absolute right-4 top-3.5 text-slate-500 font-bold text-sm">EUR</span>
         </div>
       </div>
     </div>
 
     <!-- Montant Total Display -->
     <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-200">
-      <p class="text-sm font-semibold text-slate-600 mb-2 uppercase tracking-wide">Montant Total</p>
-      <p class="text-4xl font-black text-blue-600">{{ (quantite * prix_unitaire) | number: '1.2-2' }} <span class="text-2xl text-blue-500">€</span></p>
+      <p class="text-sm font-semibold text-slate-600 mb-2 uppercase tracking-wide">Montant total</p>
+      <p class="text-4xl font-black text-blue-600">{{ (quantite * prix_unitaire) | number: '1.2-2' }} <span class="text-2xl text-blue-500">EUR</span></p>
     </div>
 
-    <!-- Catégorie -->
+    <!-- Categorie -->
     <div>
-      <label class="block text-sm font-semibold text-slate-700 mb-2">
-        Catégorie
-      </label>
+      <label class="block text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">Categorie</label>
       <div class="flex gap-2">
         <select
           [(ngModel)]="categorie_id"
           name="categorie_id"
-          class="flex-1 px-4 py-2 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none transition"
+          class="flex-1 px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none transition font-semibold text-slate-900"
         >
-          <option value="" disabled>-- Sélectionner une catégorie --</option>
-          <option *ngFor="let cat of filteredCategories" [value]="cat.id">
+          <option value="" disabled>-- Selectionner une categorie --</option>
+          <option *ngFor="let cat of filteredCategories" [value]="cat.id" class="font-semibold">
             {{ cat.nom }} ({{ cat.type }})
           </option>
         </select>
         <button
           type="button"
           (click)="toggleNewCategoryForm()"
-          class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition"
-          title="Ajouter une nouvelle catégorie"
+          class="px-4 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-emerald-500/30"
+          title="Ajouter une nouvelle categorie"
         >
-          ➕
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 5v14" />
+            <path d="M5 12h14" />
+          </svg>
         </button>
       </div>
 
-      <!-- Form pour créer une nouvelle catégorie -->
-      <div *ngIf="showNewCategoryForm" class="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+      <!-- Form pour creer une nouvelle categorie -->
+      <div *ngIf="showNewCategoryForm" class="mt-4 p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl border-2 border-emerald-300">
+        <p class="text-sm font-semibold text-emerald-700 mb-3">Nouvelle categorie</p>
         <div class="flex gap-2">
           <input
             type="text"
             [(ngModel)]="newCategoryName"
             name="newCategoryName"
-            placeholder="Nom de la catégorie..."
-            class="flex-1 px-3 py-2 border-2 border-green-300 rounded-lg focus:border-green-500 focus:outline-none"
+            placeholder="Nom de la categorie..."
+            class="flex-1 px-4 py-2 border-2 border-emerald-300 rounded-lg focus:border-emerald-500 focus:outline-none bg-white font-semibold"
           />
           <button
             type="button"
             (click)="createNewCategory()"
             [disabled]="creatingCategory"
-            class="px-3 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition disabled:opacity-50"
+            class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-lg transition disabled:opacity-50 transform hover:scale-105"
           >
-            {{ creatingCategory ? '...' : 'Créer' }}
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
           </button>
           <button
             type="button"
             (click)="toggleNewCategoryForm()"
-            class="px-3 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold rounded-lg transition"
+            class="px-4 py-2 bg-slate-300 hover:bg-slate-400 text-slate-700 font-bold rounded-lg transition"
           >
-            Annuler
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 6L6 18" />
+              <path d="M6 6l12 12" />
+            </svg>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Submit Button -->
-    <div class="flex gap-3 pt-2">
+    <!-- Action Buttons -->
+    <div class="flex gap-3 pt-6 border-t-2 border-slate-200">
       <button
         type="submit"
         [disabled]="loading"
         [class.opacity-50]="loading"
         [class.cursor-not-allowed]="loading"
-        class="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition disabled:hover:bg-current"
+        class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-blue-500/30 disabled:hover:scale-100 disabled:shadow-none"
       >
-        {{ loading ? (editingTransaction ? 'Modification...' : 'Création...') : (editingTransaction ? 'Modifier' : 'Ajouter Transaction') }}
+        <span class="inline-flex items-center gap-2">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <path d="M17 21v-8H7v8" />
+            <path d="M7 3v5h8" />
+          </svg>
+          {{ loading ? (editingTransaction ? 'Modification...' : 'Creation...') : (editingTransaction ? 'Modifier' : 'Ajouter') }}
+        </span>
       </button>
       <button
         type="reset"
         (click)="editingTransaction = null"
-        class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition"
+        class="flex-1 px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition-all duration-200 transform hover:scale-105"
       >
-        {{ editingTransaction ? 'Annuler' : 'Réinitialiser' }}
+        <span class="inline-flex items-center gap-2">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6L6 18" />
+            <path d="M6 6l12 12" />
+          </svg>
+          {{ editingTransaction ? 'Annuler' : 'Reinitialiser' }}
+        </span>
       </button>
     </div>
   </form>

@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core'
 import { HttpClient } from '@angular/common/http'
+import { environment } from '../../../environments/environment'
 
-const API_BASE_URL = 'http://localhost:3000/api'
+const API_BASE_URL = environment.apiBaseUrl
 
 export interface Category {
   id: number

@@ -1,21 +1,21 @@
-<div class="bg-white rounded-lg shadow-md overflow-x-auto">
+<div class="bg-white/90 backdrop-blur rounded-2xl shadow-xl border border-slate-200/60 overflow-x-auto animate-fade-up">
   <div class="p-6">
-    <h2 class="text-xl font-bold text-gray-800 mb-4">{{ title }}</h2>
+    <h2 class="text-lg font-black text-slate-900 mb-4 uppercase tracking-wide">{{ title }}</h2>
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
-          <tr class="bg-blue-100 border-b-2 border-blue-300">
-            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Date</th>
-            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Désignation</th>
-            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Quantité</th>
-            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Prix Unit.</th>
-            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Montant</th>
-            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Catégorie</th>
-            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
+          <tr class="bg-slate-100/80 border-b border-slate-200">
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">Date</th>
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">Désignation</th>
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">Quantité</th>
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">Prix unit.</th>
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">Montant</th>
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">Catégorie</th>
+            <th class="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let transaction of displayedTransactions" class="border-b hover:bg-gray-50">
+          <tr *ngFor="let transaction of displayedTransactions" class="border-b border-slate-100 hover:bg-slate-50/60">
             <td class="px-3 sm:px-4 py-3">
               {{ (transaction.date | date: 'dd/MM/yyyy') || '-' }}
             </td>
@@ -28,7 +28,7 @@
             <td class="px-3 sm:px-4 py-3">
               {{ transaction.prix_unitaire | number: '1.2-2' }} €
             </td>
-            <td class="px-3 sm:px-4 py-3 font-semibold text-blue-600">
+            <td class="px-3 sm:px-4 py-3 font-semibold text-blue-700">
               {{ (transaction.quantite * transaction.prix_unitaire) | number: '1.2-2' }} €
             </td>
             <td class="px-3 sm:px-4 py-3">
@@ -38,17 +38,26 @@
               <div class="flex gap-2 flex-wrap">
                 <button
                   (click)="onEdit(transaction)"
-                  class="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-blue-500 hover:bg-blue-600 text-white rounded transition"
+                  class="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-blue-600/90 hover:bg-blue-700 text-white rounded-lg transition-all shadow-sm hover:shadow"
                   title="Modifier"
                 >
-                  ✏️
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                  </svg>
                 </button>
                 <button
                   (click)="onDelete(transaction.id)"
-                  class="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-red-500 hover:bg-red-600 text-white rounded transition"
+                  class="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-red-600/90 hover:bg-red-700 text-white rounded-lg transition-all shadow-sm hover:shadow"
                   title="Supprimer"
                 >
-                  🗑️
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M6 6l1 14h10l1-14" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                  </svg>
                 </button>
               </div>
             </td>
