@@ -7,20 +7,64 @@
     </div>
 
     <div *ngIf="!loading" class="space-y-8">
-      <!-- Add Transaction Form -->
-      <app-add-transaction-form
-        (success)="onTransactionAdded()"
-      ></app-add-transaction-form>
+      <!-- Bouton Nouvelle Transaction -->
+      <div class="flex justify-end">
+        <button
+          (click)="openNewTransactionModal()"
+          class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center gap-2"
+        >
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Nouvelle Transaction
+        </button>
+      </div>
+
+      <!-- Modal Nouvelle Transaction -->
+      <div *ngIf="showNewTransactionModal" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeNewTransactionModal()"></div>
+        <div class="relative w-full max-w-2xl mx-4 max-h-screen overflow-y-auto">
+          <div class="bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-2xl p-8 border border-slate-200/50">
+            <!-- Close Button -->
+            <button
+              (click)="closeNewTransactionModal()"
+              class="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-700 transition-colors"
+            >
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+            <app-add-transaction-form
+              (success)="onTransactionAdded()"
+              (cancel)="closeNewTransactionModal()"
+            ></app-add-transaction-form>
+          </div>
+        </div>
+      </div>
 
       <!-- Edit Transaction Modal -->
       <div *ngIf="editingTransaction" class="fixed inset-0 z-50 flex items-center justify-center">
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="onEditCancel()"></div>
-        <div class="relative w-full max-w-2xl mx-4">
-          <app-add-transaction-form
-            [editingTransaction]="editingTransaction"
-            (success)="onEditSuccess()"
-            (cancel)="onEditCancel()"
-          ></app-add-transaction-form>
+        <div class="relative w-full max-w-2xl mx-4 max-h-screen overflow-y-auto">
+          <div class="bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-2xl p-8 border border-slate-200/50">
+            <!-- Close Button -->
+            <button
+              (click)="onEditCancel()"
+              class="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-700 transition-colors"
+            >
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+            <app-add-transaction-form
+              [editingTransaction]="editingTransaction"
+              (success)="onEditSuccess()"
+              (cancel)="onEditCancel()"
+            ></app-add-transaction-form>
+          </div>
         </div>
       </div>
 
@@ -41,7 +85,7 @@
       </div>
 
       <!-- Solde -->
-      <div class="bg-blue-500 text-white rounded-lg shadow-md p-6">
+      <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-md p-6">
         <p class="text-lg font-semibold">Solde Actuel: {{ solde | number: '1.2-2' }} €</p>
       </div>
 
@@ -50,20 +94,40 @@
 
       <!-- Transactions -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <app-transaction-table
-          title="Dernières Recettes"
-          [transactions]="recettes"
-          [categories]="categories"
-          (delete)="onDeleteTransaction($event)"
-          (edit)="onEditTransaction($event)"
-        ></app-transaction-table>
-        <app-transaction-table
-          title="Dernières Dépenses"
-          [transactions]="depenses"
-          [categories]="categories"
-          (delete)="onDeleteTransaction($event)"
-          (edit)="onEditTransaction($event)"
-        ></app-transaction-table>
+        <div>
+          <app-transaction-table
+            title="Dernières Recettes"
+            [transactions]="recettesPreview"
+            [categories]="categories"
+            (delete)="onDeleteTransaction($event)"
+            (edit)="onEditTransaction($event)"
+          ></app-transaction-table>
+          <div *ngIf="recettes.length > 5" class="mt-4 text-center">
+            <button
+              (click)="goToRecettes()"
+              class="px-4 py-2 text-emerald-600 hover:text-emerald-700 font-semibold border border-emerald-500 rounded-lg hover:bg-emerald-50 transition-colors text-sm"
+            >
+              Voir plus ({{ recettes.length }} recettes)
+            </button>
+          </div>
+        </div>
+        <div>
+          <app-transaction-table
+            title="Dernières Dépenses"
+            [transactions]="depensesPreview"
+            [categories]="categories"
+            (delete)="onDeleteTransaction($event)"
+            (edit)="onEditTransaction($event)"
+          ></app-transaction-table>
+          <div *ngIf="depenses.length > 5" class="mt-4 text-center">
+            <button
+              (click)="goToDepenses()"
+              class="px-4 py-2 text-red-600 hover:text-red-700 font-semibold border border-red-500 rounded-lg hover:bg-red-50 transition-colors text-sm"
+            >
+              Voir plus ({{ depenses.length }} dépenses)
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </main>

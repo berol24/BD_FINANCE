@@ -29,8 +29,11 @@ export class DashboardComponent implements OnInit {
   transactions: Transaction[] = []
   recettes: Transaction[] = []
   depenses: Transaction[] = []
+  recettesPreview: Transaction[] = []
+  depensesPreview: Transaction[] = []
   loading = true
   editingTransaction: Transaction | null = null
+  showNewTransactionModal = false
 
   totalRecettes = 0
   totalDepenses = 0
@@ -71,6 +74,10 @@ export class DashboardComponent implements OnInit {
         return cat?.type === 'depense'
       })
 
+      // Limiter à 5 pour l'aperçu
+      this.recettesPreview = this.recettes.slice(0, 5)
+      this.depensesPreview = this.depenses.slice(0, 5)
+
       // Calculer les totaux (quantite * prix_unitaire)
       this.totalRecettes = this.recettes.reduce((sum, t) => sum + t.quantite * t.prix_unitaire, 0)
       this.totalDepenses = this.depenses.reduce((sum, t) => sum + t.quantite * t.prix_unitaire, 0)
@@ -95,6 +102,7 @@ export class DashboardComponent implements OnInit {
   }
 
   async onTransactionAdded(): Promise<void> {
+    this.showNewTransactionModal = false
     await this.loadData()
   }
 
@@ -109,6 +117,22 @@ export class DashboardComponent implements OnInit {
 
   onEditCancel(): void {
     this.editingTransaction = null
+  }
+
+  openNewTransactionModal(): void {
+    this.showNewTransactionModal = true
+  }
+
+  closeNewTransactionModal(): void {
+    this.showNewTransactionModal = false
+  }
+
+  goToRecettes(): void {
+    this.router.navigate(['/dashboard/recettes'])
+  }
+
+  goToDepenses(): void {
+    this.router.navigate(['/dashboard/depenses'])
   }
 
   logout(): void {

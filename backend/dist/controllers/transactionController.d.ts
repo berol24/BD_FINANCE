@@ -4,4 +4,6 @@ export declare const getTransactions: (req: AuthenticatedRequest, res: Response)
 export declare const createTransaction: (req: AuthenticatedRequest, res: Response) => Promise<void>;
 export declare const updateTransaction: (req: AuthenticatedRequest, res: Response) => Promise<void>;
 export declare const deleteTransaction: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const getTransactionsByPeriod: (req: AuthenticatedRequest, res: Response) => Promise<void>;
+export declare const getChartData: (req: AuthenticatedRequest, res: Response) => Promise<void>;
 //# sourceMappingURL=transactionController.d.ts.map

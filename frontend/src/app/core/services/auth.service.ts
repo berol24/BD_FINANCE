@@ -15,6 +15,12 @@ export interface AuthResponse {
   user: User
 }
 
+export interface JwtPayload {
+  exp?: number
+  iat?: number
+  [key: string]: any
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -62,5 +68,43 @@ export class AuthService {
   getCurrentUser(): User | null {
     const user = localStorage.getItem('user')
     return user ? JSON.parse(user) : null
+  }
+
+  /**
+   * Vérifie si le JWT est expiré
+   */
+  isTokenExpired(): boolean {
+    const token = this.getAccessToken()
+    if (!token) return true
+
+    try {
+      const payload = this.decodeToken(token)
+      if (!payload.exp) return true
+
+      const expirationTime = payload.exp * 1000
+      const currentTime = Date.now()
+      return currentTime >= expirationTime
+    } catch {
+      return true
+    }
+  }
+
+  /**
+   * Décode un JWT manuellement
+   */
+  private decodeToken(token: string): JwtPayload {
+    try {
+      const base64Url = token.split('.')[1]
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      )
+      return JSON.parse(jsonPayload)
+    } catch {
+      return {}
+    }
   }
 }

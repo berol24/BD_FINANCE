@@ -7,10 +7,11 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 3000
 
-// CORS middleware
+// CORS middleware FIRST
 app.use((req, res, next) => {
   const allowedOrigins = [
     'http://localhost:4200',
+    'http://localhost:3000',
     'https://bd-finance.pages.dev',
   ]
   const origin = req.headers.origin
@@ -30,7 +31,9 @@ app.use((req, res, next) => {
   next()
 })
 
+// Parse JSON bodies
 app.use(express.json())
+
 app.use('/api', routes)
 
 app.listen(PORT, () => {

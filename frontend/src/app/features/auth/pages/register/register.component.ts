@@ -17,6 +17,8 @@ export class RegisterComponent {
   email = ''
   password = ''
   confirmPassword = ''
+  showPassword = false
+  showConfirmPassword = false
   loading = false
   error = ''
 
@@ -47,5 +49,13 @@ export class RegisterComponent {
     } finally {
       this.loading = false
     }
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword
+  }
+
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword = !this.showConfirmPassword
   }
 }

@@ -4,8 +4,7 @@ import { authGuard } from './core/guards/auth.guard'
 export const appRoutes: Routes = [
   {
     path: '',
-    redirectTo: 'dashboard',
-    pathMatch: 'full',
+    loadChildren: () => import('./features/landing/landing.routes').then((m) => m.LANDING_ROUTES),
   },
   {
     path: 'auth',

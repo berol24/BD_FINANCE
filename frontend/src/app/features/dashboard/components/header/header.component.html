@@ -17,19 +17,75 @@
       </div>
 
       <!-- Right Section -->
-      <div class="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
-        <!-- User Info -->
-        <div class="flex-1 sm:flex-none text-right hidden sm:block">
-          <p class="text-sm font-semibold text-slate-200">{{ user?.prenom }} {{ user?.nom }}</p>
-          <p class="text-xs text-slate-400">Connecté</p>
+      <div class="flex items-center gap-2 sm:gap-4 w-full sm:w-auto flex-wrap justify-end">
+        <!-- User Avatar & Profile Button -->
+        <button
+          (click)="goToProfile()"
+          class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-700/50 transition-all duration-200"
+          title="Profil"
+        >
+          <div class="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-blue-500 text-white font-bold text-sm shadow-lg">
+            {{ getAvatarInitials() }}
+          </div>
+          <span class="hidden sm:block text-sm font-semibold text-slate-200">{{ user?.prenom }} {{ user?.nom }}</span>
+        </button>
+
+        <!-- Language Selector -->
+        <div class="relative">
+          <button
+            (click)="showLanguageMenu = !showLanguageMenu"
+            class="px-3 py-2 bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 text-white font-semibold rounded-lg transition-all duration-200 text-sm flex items-center gap-2"
+            title="Changer la langue"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M2 12h20" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+            {{ currentLanguage.toUpperCase() }}
+          </button>
+          <div *ngIf="showLanguageMenu" class="absolute right-0 mt-2 bg-slate-800 rounded-lg shadow-xl border border-slate-700 overflow-hidden">
+            <button
+              (click)="changeLanguage('fr')"
+              [class.bg-emerald-600]="currentLanguage === 'fr'"
+              class="block w-full px-4 py-2 text-left text-white hover:bg-slate-700 transition-colors text-sm font-semibold"
+            >
+              🇫🇷 Français
+            </button>
+            <button
+              (click)="changeLanguage('en')"
+              [class.bg-emerald-600]="currentLanguage === 'en'"
+              class="block w-full px-4 py-2 text-left text-white hover:bg-slate-700 transition-colors text-sm font-semibold"
+            >
+              🇬🇧 English
+            </button>
+          </div>
         </div>
-        
+
+        <!-- Share Button -->
+        <button
+          (click)="onShare()"
+          class="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-sm whitespace-nowrap"
+          title="Partager l'application"
+        >
+          <span class="inline-flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            <span class="hidden sm:inline">Partager</span>
+          </span>
+        </button>
+
         <!-- Install Button -->
         <button
           *ngIf="canInstall"
           (click)="onInstall()"
-          class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-emerald-500/50 text-sm whitespace-nowrap"
-          title="Installer l'application sur votre appareil"
+          class="px-3 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-emerald-500/50 text-sm whitespace-nowrap"
+          title="Installer l'application"
         >
           <span class="inline-flex items-center gap-2">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -38,14 +94,14 @@
               <path d="M12 16v4" />
               <path d="M12 12l-3 3h6z" />
             </svg>
-            Installer
+            <span class="hidden sm:inline">Installer</span>
           </span>
         </button>
 
         <!-- Logout Button -->
         <button
           (click)="onLogout()"
-          class="px-4 py-2 bg-gradient-to-r from-red-500/20 to-red-600/20 hover:from-red-500/40 hover:to-red-600/40 text-red-300 hover:text-red-200 font-semibold rounded-lg transition-all duration-200 border border-red-500/30 hover:border-red-500/60 text-sm whitespace-nowrap"
+          class="px-3 py-2 bg-gradient-to-r from-red-500/20 to-red-600/20 hover:from-red-500/40 hover:to-red-600/40 text-red-300 hover:text-red-200 font-semibold rounded-lg transition-all duration-200 border border-red-500/30 hover:border-red-500/60 text-sm whitespace-nowrap"
         >
           <span class="inline-flex items-center gap-2">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -53,7 +109,7 @@
               <path d="M16 17l5-5-5-5" />
               <path d="M21 12H9" />
             </svg>
-            Deconnexion
+            <span class="hidden sm:inline">Déconnexion</span>
           </span>
         </button>
       </div>

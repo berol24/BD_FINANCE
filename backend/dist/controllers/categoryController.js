@@ -38,7 +38,13 @@ export const createCategory = async (req, res) => {
     })
         .select();
     if (error) {
-        res.status(400).json({ error: error.message });
+        console.error('Supabase error creating category:', error);
+        // Gestion spécifique de l'erreur de contrainte unique
+        if (error.code === '23505') {
+            res.status(409).json({ message: `Une catégorie "${nom}" existe déjà pour vous` });
+            return;
+        }
+        res.status(400).json({ message: 'Erreur lors de la création de la catégorie', error: error.message });
         return;
     }
     res.json(data);
