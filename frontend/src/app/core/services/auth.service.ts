@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core'
 import { HttpClient } from '@angular/common/http'
+import { environment } from '../../../environments/environment'
 
 export interface User {
   id: number
@@ -22,7 +23,7 @@ export class AuthService {
 
   async login(email: string, password: string): Promise<AuthResponse | undefined> {
     const response = await this.http
-      .post<AuthResponse>('/api/auth/login', { email, password })
+      .post<AuthResponse>(`${environment.apiBaseUrl}/auth/login`, { email, password })
       .toPromise()
     
     if (response) {
@@ -34,7 +35,7 @@ export class AuthService {
 
   async register(nom: string, prenom: string, email: string, password: string, confirmPassword: string): Promise<any> {
     return await this.http
-      .post('/api/auth/register', {
+      .post(`${environment.apiBaseUrl}/auth/register`, {
         nom,
         prenom,
         email,
