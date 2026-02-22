@@ -5,7 +5,7 @@ services:
     plan: free
     rootDir: frontend
     buildCommand: npm run build
-    startCommand: npx http-server dist/bd-finance/browser -p $PORT
+    startCommand: npx http-server dist/bd-finance/browser -p $PORT -S
     publishDirectory: dist/bd-finance/browser
     envVars:
       - key: API_BASE_URL
