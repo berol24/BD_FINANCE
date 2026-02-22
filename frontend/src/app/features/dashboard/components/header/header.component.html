@@ -84,18 +84,16 @@
         <button
           *ngIf="canInstall"
           (click)="onInstall()"
-          class="px-3 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-emerald-500/50 text-sm whitespace-nowrap"
+          class="px-4 py-2 bg-black hover:bg-gray-800 text-white font-bold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-sm whitespace-nowrap inline-flex items-center gap-2"
           title="Installer l'application"
         >
-          <span class="inline-flex items-center gap-2">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M21 16V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8" />
-              <path d="M7 20h10" />
-              <path d="M12 16v4" />
-              <path d="M12 12l-3 3h6z" />
-            </svg>
-            <span class="hidden sm:inline">Installer</span>
-          </span>
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 16V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8" />
+            <path d="M7 20h10" />
+            <path d="M12 16v4" />
+            <path d="M12 12l-3 3h6z" />
+          </svg>
+          <span class="hidden sm:inline">Installer</span>
         </button>
 
         <!-- Logout Button -->

@@ -28,6 +28,12 @@ export class HeaderComponent implements OnInit {
   ngOnInit(): void {
     this.pwaService.onCanInstallChange((can) => {
       this.canInstall = can
+      console.log('[Header] Install button visibility changed:', can)
+      if (can) {
+        console.log('✅ BOUTON INSTALLER EST VISIBLE')
+      } else {
+        console.log('❌ Bouton installer caché (déjà installé ou desktop)')
+      }
     })
     this.currentLanguage = this.i18nService.getCurrentLanguage()
   }
