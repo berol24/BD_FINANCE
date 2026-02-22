@@ -100,8 +100,15 @@ export class DashboardComponent implements OnInit {
 
   onEditTransaction(transaction: Transaction): void {
     this.editingTransaction = transaction
-    // Scroller jusqu'au formulaire
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async onEditSuccess(): Promise<void> {
+    this.editingTransaction = null
+    await this.loadData()
+  }
+
+  onEditCancel(): void {
+    this.editingTransaction = null
   }
 
   logout(): void {

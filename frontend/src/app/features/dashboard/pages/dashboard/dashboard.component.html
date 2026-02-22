@@ -8,10 +8,21 @@
 
     <div *ngIf="!loading" class="space-y-8">
       <!-- Add Transaction Form -->
-      <app-add-transaction-form 
-        [editingTransaction]="editingTransaction"
+      <app-add-transaction-form
         (success)="onTransactionAdded()"
       ></app-add-transaction-form>
+
+      <!-- Edit Transaction Modal -->
+      <div *ngIf="editingTransaction" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="onEditCancel()"></div>
+        <div class="relative w-full max-w-2xl mx-4">
+          <app-add-transaction-form
+            [editingTransaction]="editingTransaction"
+            (success)="onEditSuccess()"
+            (cancel)="onEditCancel()"
+          ></app-add-transaction-form>
+        </div>
+      </div>
 
       <!-- Stats -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
