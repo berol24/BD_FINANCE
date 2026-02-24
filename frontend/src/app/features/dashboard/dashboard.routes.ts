@@ -19,4 +19,8 @@ export const DASHBOARD_ROUTES: Routes = [
     path: 'depenses',
     loadComponent: () => import('./pages/transactions-list/transactions-list.component').then(m => m.TransactionsListComponent),
   },
+  {
+    path: 'transactions',
+    loadComponent: () => import('./pages/transactions-list/transactions-list.component').then(m => m.TransactionsListComponent),
+  },
 ]

@@ -92,7 +92,8 @@ export class PdfService {
     transactions: any[],
     totalRecettes: number,
     totalDepenses: number,
-    solde: number
+    solde: number,
+    categoriesAmount: any[] = []
   ): Promise<void> {
     try {
       // SVG Icons en base64
@@ -204,6 +205,47 @@ export class PdfService {
               </tbody>
             </table>
           </div>
+
+          <!-- Categories Summary Table -->
+          ${categoriesAmount.length > 0 ? `
+          <div style="padding: 20px 25px; background: white; page-break-inside: avoid;">
+            <h3 style="margin: 0 0 16px 0; color: #1f2937; font-size: 16px; font-weight: 600; page-break-after: avoid;">Résumé par Catégorie (Période: ${startDate} à ${endDate})</h3>
+            
+            <table style="width: 100%; border-collapse: collapse; page-break-inside: avoid;">
+              <thead style="position: relative;">
+                <tr style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-bottom: 2px solid #d1d5db;">
+                  <th style="padding: 12px 8px; text-align: left; font-weight: 600; color: #374151; font-size: 12px; text-transform: uppercase;">Catégorie</th>
+                  <th style="padding: 12px 8px; text-align: right; font-weight: 600; color: #374151; font-size: 12px; text-transform: uppercase;">Montant</th>
+                  <th style="padding: 12px 8px; text-align: right; font-weight: 600; color: #374151; font-size: 12px; text-transform: uppercase;">% Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${categoriesAmount
+                  .map((cat, index) => {
+                    const total = categoriesAmount.reduce((sum, c) => sum + c.montant, 0)
+                    return `
+                  <tr style="border-bottom: 1px solid #f3f4f6; background: ${index % 2 === 0 ? '#ffffff' : '#f9fafb'}; page-break-inside: avoid;">
+                    <td style="padding: 10px 8px; color: #1f2937; font-size: 12px; font-weight: 500;">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 12px; height: 12px; border-radius: 3px; background-color: ${cat.couleur};"></div>
+                        ${cat.nom}
+                      </div>
+                    </td>
+                    <td style="padding: 10px 8px; color: #1f2937; font-weight: 600; text-align: right; font-size: 12px; white-space: nowrap;">${cat.montant.toFixed(2)} €</td>
+                    <td style="padding: 10px 8px; color: #6b7280; text-align: right; font-size: 12px; white-space: nowrap;">${((cat.montant / total) * 100).toFixed(1)}%</td>
+                  </tr>
+                `
+                  })
+                  .join('')}
+                <tr style="background: linear-gradient(135deg, #f0fdf4 0%, #f0fdf4 100%); border-top: 2px solid #10b981; page-break-inside: avoid;">
+                  <td style="padding: 12px 8px; color: #1f2937; font-size: 12px; font-weight: bold;">TOTAL</td>
+                  <td style="padding: 12px 8px; color: #1f2937; font-weight: bold; text-align: right; font-size: 12px; white-space: nowrap;">${categoriesAmount.reduce((sum, cat) => sum + cat.montant, 0).toFixed(2)} €</td>
+                  <td style="padding: 12px 8px; color: #1f2937; text-align: right; font-size: 12px; font-weight: bold;">100%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          ` : ''}
 
           <!-- Footer sur chaque page -->
           <div style="margin-top: 35px; padding: 20px 0; border-top: 3px solid #10b981; color: #6b7280; page-break-inside: avoid;">

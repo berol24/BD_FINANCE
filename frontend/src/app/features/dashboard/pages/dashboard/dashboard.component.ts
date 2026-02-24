@@ -135,6 +135,10 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/dashboard/depenses'])
   }
 
+  goToAllTransactions(): void {
+    this.router.navigate(['/dashboard/transactions'])
+  }
+
   logout(): void {
     this.authService.logout()
     this.router.navigate(['/auth/login'])
