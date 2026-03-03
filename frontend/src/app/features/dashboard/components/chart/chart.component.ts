@@ -23,13 +23,12 @@ export class ChartComponent {
         data[month] = { recettes: 0, depenses: 0 }
       }
 
-      // Déterminer le type via la catégorie
-      const category = this.categories.find((c) => c.id === t.categorie_id)
+      // Déterminer le type directement depuis la transaction
       const montant = t.quantite * t.prix_unitaire
 
-      if (category?.type === 'recette') {
+      if (t.type === 'recette') {
         data[month].recettes += montant
-      } else if (category?.type === 'depense') {
+      } else if (t.type === 'depense') {
         data[month].depenses += montant
       }
     })

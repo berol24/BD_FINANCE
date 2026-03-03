@@ -23,4 +23,8 @@ export const DASHBOARD_ROUTES: Routes = [
     path: 'transactions',
     loadComponent: () => import('./pages/transactions-list/transactions-list.component').then(m => m.TransactionsListComponent),
   },
+  {
+    path: 'categories',
+    loadComponent: () => import('./pages/categories/categories.component').then(m => m.CategoriesComponent),
+  },
 ]

@@ -2,26 +2,35 @@ import { HttpInterceptorFn } from '@angular/common/http'
 import { inject } from '@angular/core'
 import { AuthService } from '../services/auth.service'
 import { Router } from '@angular/router'
+import { from, switchMap } from 'rxjs'
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService)
   const router = inject(Router)
-  const token = authService.getAccessToken()
 
-  // Vérifier si le token est expiré
-  if (authService.isTokenExpired()) {
-    authService.logout()
-    router.navigate(['/auth/login'])
+  const isAuthRoute =
+    req.url.includes('/auth/login') || req.url.includes('/auth/register') || req.url.includes('/auth/refresh')
+
+  if (isAuthRoute) {
     return next(req)
   }
 
-  if (token) {
-    req = req.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-  }
+  return from(authService.ensureValidAccessToken()).pipe(
+    switchMap((token) => {
+      if (!token) {
+        console.warn('⚠️ Pas de token valide, redirection vers login')
+        router.navigate(['/auth/login'])
+        return next(req)
+      }
 
-  return next(req)
+      console.log('✅ Token valide ajouté à la requête:', req.url)
+      const authenticatedRequest = req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      return next(authenticatedRequest)
+    })
+  )
 }

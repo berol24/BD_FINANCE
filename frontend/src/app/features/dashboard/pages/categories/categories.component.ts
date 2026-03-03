@@ -1,0 +1,177 @@
+import { Component, OnInit } from '@angular/core'
+import { CommonModule } from '@angular/common'
+import { FormsModule } from '@angular/forms'
+import { Router } from '@angular/router'
+import { TransactionService, Category } from '../../../../core/services/transaction.service'
+
+@Component({
+  selector: 'app-categories',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './categories.component.html',
+})
+export class CategoriesComponent implements OnInit {
+  categories: Category[] = []
+  loading = true
+  error = ''
+
+  newCategoryName = ''
+  searchTerm = ''
+
+  editingCategoryId: number | null = null
+  editingCategoryName = ''
+  saving = false
+
+  constructor(
+    private transactionService: TransactionService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.loadCategories()
+  }
+
+  get filteredCategories(): Category[] {
+    const term = this.normalizeName(this.searchTerm)
+    if (!term) return this.categories
+
+    return this.categories.filter((category) =>
+      this.normalizeName(category.nom).includes(term)
+    )
+  }
+
+  get matchedCategoriesForNewName(): Category[] {
+    const term = this.normalizeName(this.newCategoryName)
+    if (!term) return []
+
+    return this.categories.filter((category) =>
+      this.normalizeName(category.nom).includes(term)
+    )
+  }
+
+  get canCreateCategory(): boolean {
+    const normalized = this.normalizeName(this.newCategoryName)
+    return !!normalized && !this.categoryExists(normalized)
+  }
+
+  async loadCategories(): Promise<void> {
+    try {
+      this.loading = true
+      this.error = ''
+      const res = await this.transactionService.getCategories()
+      this.categories = (res.data || [])
+        .slice()
+        .sort((a: Category, b: Category) => a.nom.localeCompare(b.nom, 'fr'))
+    } catch (err) {
+      this.error = 'Erreur lors du chargement des categories'
+      console.error('Erreur loadCategories:', err)
+    } finally {
+      this.loading = false
+    }
+  }
+
+  async addCategory(): Promise<void> {
+    const sanitizedName = this.sanitizeName(this.newCategoryName)
+
+    if (!sanitizedName) {
+      this.error = 'Veuillez entrer un nom de categorie'
+      return
+    }
+
+    if (this.categoryExists(this.normalizeName(sanitizedName))) {
+      this.error = 'Cette categorie existe deja'
+      return
+    }
+
+    try {
+      this.saving = true
+      this.error = ''
+      await this.transactionService.createCategory({ nom: sanitizedName })
+      this.newCategoryName = ''
+      await this.loadCategories()
+    } catch (err: any) {
+      this.error = err?.error?.message || 'Erreur lors de la creation de la categorie'
+      console.error('Erreur addCategory:', err)
+    } finally {
+      this.saving = false
+    }
+  }
+
+  startEdit(category: Category): void {
+    this.editingCategoryId = category.id
+    this.editingCategoryName = category.nom
+    this.error = ''
+  }
+
+  cancelEdit(): void {
+    this.editingCategoryId = null
+    this.editingCategoryName = ''
+    this.error = ''
+  }
+
+  async saveEdit(categoryId: number): Promise<void> {
+    const sanitizedName = this.sanitizeName(this.editingCategoryName)
+
+    if (!sanitizedName) {
+      this.error = 'Le nom de categorie est obligatoire'
+      return
+    }
+
+    if (this.categoryExists(this.normalizeName(sanitizedName), categoryId)) {
+      this.error = 'Cette categorie existe deja'
+      return
+    }
+
+    try {
+      this.saving = true
+      this.error = ''
+      await this.transactionService.updateCategory(categoryId, { nom: sanitizedName })
+      this.cancelEdit()
+      await this.loadCategories()
+    } catch (err: any) {
+      this.error = err?.error?.message || 'Erreur lors de la modification de la categorie'
+      console.error('Erreur saveEdit:', err)
+    } finally {
+      this.saving = false
+    }
+  }
+
+  async deleteCategory(categoryId: number): Promise<void> {
+    if (!confirm('Voulez-vous vraiment supprimer cette categorie ?')) {
+      return
+    }
+
+    try {
+      this.saving = true
+      this.error = ''
+      await this.transactionService.deleteCategory(categoryId)
+      await this.loadCategories()
+    } catch (err: any) {
+      this.error = err?.error?.message || 'Erreur lors de la suppression de la categorie'
+      console.error('Erreur deleteCategory:', err)
+    } finally {
+      this.saving = false
+    }
+  }
+
+  goBack(): void {
+    this.router.navigate(['/dashboard'])
+  }
+
+  private categoryExists(normalizedName: string, excludeId?: number): boolean {
+    return this.categories.some((category) => {
+      if (excludeId && category.id === excludeId) {
+        return false
+      }
+      return this.normalizeName(category.nom) === normalizedName
+    })
+  }
+
+  private sanitizeName(value: string): string {
+    return value.trim().replace(/\s+/g, ' ')
+  }
+
+  private normalizeName(value: string): string {
+    return this.sanitizeName(value).toLowerCase()
+  }
+}

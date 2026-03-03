@@ -1,6 +1,7 @@
 import { Component, Output, EventEmitter, OnInit, Input, OnChanges, SimpleChanges } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
+import { Router } from '@angular/router'
 import { TransactionService, Category, Transaction } from '../../../../core/services/transaction.service'
 
 @Component({
@@ -23,12 +24,12 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
   categories: Category[] = []
   loading = false
   error = ''
-  showNewCategoryForm = false
-  newCategoryName = ''
-  creatingCategory = false
   private lastEditingId: number | null = null
 
-  constructor(private transactionService: TransactionService) {}
+  constructor(
+    private transactionService: TransactionService,
+    private router: Router
+  ) {}
 
   async ngOnInit(): Promise<void> {
     await this.loadCategories()
@@ -42,7 +43,6 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
   }
 
   get filteredCategories(): Category[] {
-    // Afficher TOUTES les catégories indépendamment du type
     return this.categories
   }
 
@@ -71,56 +71,17 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
     this.prix_unitaire = this.editingTransaction.prix_unitaire
     this.categorie_id = this.editingTransaction.categorie_id
     this.date = this.editingTransaction.date.split('T')[0]
-
-    const category = this.categories.find((c) => c.id === this.categorie_id)
-    if (category) {
-      this.type = category.type as 'recette' | 'depense'
-    }
+    this.type = this.editingTransaction.type
 
     this.lastEditingId = this.editingTransaction.id
   }
 
   onTypeChange(): void {
-    // Ne pas réinitialiser la catégorie puisque toutes les catégories sont affichées
-    this.showNewCategoryForm = false
+    this.error = ''
   }
 
-  toggleNewCategoryForm(): void {
-    this.showNewCategoryForm = !this.showNewCategoryForm
-    this.newCategoryName = ''
-  }
-
-  async createNewCategory(): Promise<void> {
-    if (!this.newCategoryName.trim()) {
-      this.error = 'Veuillez entrer un nom de catégorie'
-      return
-    }
-
-    this.creatingCategory = true
-    try {
-      const res = await this.transactionService.createCategory({
-        nom: this.newCategoryName,
-        type: this.type,
-      })
-      
-      // Recharger les catégories
-      await this.loadCategories()
-      
-      // Sélectionner la nouvelle catégorie
-      if (res.data?.id) {
-        this.categorie_id = res.data.id
-      } else if (res[0]?.id) {
-        this.categorie_id = res[0].id
-      }
-      
-      this.newCategoryName = ''
-      this.showNewCategoryForm = false
-    } catch (err: any) {
-      this.error = err.error?.message || 'Erreur lors de la création de la catégorie'
-      console.error('Erreur createCategory:', err)
-    } finally {
-      this.creatingCategory = false
-    }
+  goToCategories(): void {
+    this.router.navigate(['/dashboard/categories'])
   }
 
   async onSubmit(): Promise<void> {
@@ -138,6 +99,7 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
         quantite: this.quantite,
         prix_unitaire: this.prix_unitaire,
         categorie_id: this.categorie_id,
+        type: this.type,
         date: this.date + 'T00:00:00',
       }
 
@@ -175,9 +137,6 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
     this.date = new Date().toISOString().split('T')[0]
     this.type = 'recette'
     this.error = ''
-    this.showNewCategoryForm = false
-    this.newCategoryName = ''
-    this.creatingCategory = false
     this.lastEditingId = null
   }
 }

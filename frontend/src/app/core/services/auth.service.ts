@@ -34,6 +34,7 @@ export class AuthService {
     
     if (response) {
       localStorage.setItem('accessToken', response.accessToken)
+      localStorage.setItem('refreshToken', response.refreshToken)
       localStorage.setItem('user', JSON.stringify(response.user))
     }
     return response
@@ -54,15 +55,29 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
     localStorage.removeItem('user')
   }
 
   isLoggedIn(): boolean {
-    return !!localStorage.getItem('accessToken')
+    const accessToken = this.getAccessToken()
+    if (!accessToken) {
+      return false
+    }
+
+    if (!this.isTokenExpired(accessToken)) {
+      return true
+    }
+
+    return !!this.getRefreshToken()
   }
 
   getAccessToken(): string | null {
     return localStorage.getItem('accessToken')
+  }
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem('refreshToken')
   }
 
   getCurrentUser(): User | null {
@@ -73,8 +88,7 @@ export class AuthService {
   /**
    * Vérifie si le JWT est expiré
    */
-  isTokenExpired(): boolean {
-    const token = this.getAccessToken()
+  isTokenExpired(token: string | null = this.getAccessToken()): boolean {
     if (!token) return true
 
     try {
@@ -87,6 +101,63 @@ export class AuthService {
     } catch {
       return true
     }
+  }
+
+  async refreshAccessToken(): Promise<string | null> {
+    const refreshToken = this.getRefreshToken()
+    if (!refreshToken) {
+      console.warn('⚠️ Aucun refresh token disponible')
+      return null
+    }
+
+    try {
+      console.log('🔄 Tentative de rafraîchissement du token...')
+      const response = await this.http
+        .post<{ accessToken: string; refreshToken: string }>(`${environment.apiBaseUrl}/auth/refresh`, {
+          refreshToken,
+        })
+        .toPromise()
+
+      if (!response?.accessToken) {
+        console.error('❌ Pas de access token dans la réponse du refresh')
+        return null
+      }
+
+      localStorage.setItem('accessToken', response.accessToken)
+      if (response.refreshToken) {
+        localStorage.setItem('refreshToken', response.refreshToken)
+      }
+
+      console.log('✅ Token rafraîchi avec succès')
+      return response.accessToken
+    } catch (error) {
+      console.error('❌ Erreur lors du rafraîchissement du token:', error)
+      return null
+    }
+  }
+
+  async ensureValidAccessToken(): Promise<string | null> {
+    const accessToken = this.getAccessToken()
+    if (!accessToken) {
+      console.warn('⚠️ Aucun access token trouvé')
+      return null
+    }
+
+    if (!this.isTokenExpired(accessToken)) {
+      console.log('✅ Access token valide')
+      return accessToken
+    }
+
+    console.warn('⚠️ Access token expiré, tentative de rafraîchissement...')
+    const newAccessToken = await this.refreshAccessToken()
+    if (newAccessToken) {
+      console.log('✅ Token rafraîchi avec succès')
+      return newAccessToken
+    }
+
+    console.error('❌ Échec du rafraîchissement du token, déconnexion')
+    this.logout()
+    return null
   }
 
   /**

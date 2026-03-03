@@ -54,6 +54,10 @@ export class HeaderComponent implements OnInit {
     this.router.navigate(['/dashboard/profile'])
   }
 
+  goToCategories(): void {
+    this.router.navigate(['/dashboard/categories'])
+  }
+
   getAvatarInitials(): string {
     if (!this.user) return '?'
     const first = this.user.prenom?.[0] || ''

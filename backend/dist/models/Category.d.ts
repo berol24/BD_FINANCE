@@ -2,7 +2,7 @@ export interface Category {
     id: number;
     user_id: number;
     nom: string;
-    type: string;
+    type?: string | null;
     createdAt?: Date;
 }
 //# sourceMappingURL=Category.d.ts.map

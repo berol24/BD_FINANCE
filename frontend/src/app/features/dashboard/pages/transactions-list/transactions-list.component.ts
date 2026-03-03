@@ -115,16 +115,10 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
       // Filtrer par type
       if (this.transactionType === 'all') {
         // Afficher tous les types
-        this.allTransactions = this.allTransactions.filter((t) => {
-          const cat = this.categories.find((c) => c.id === t.categorie_id)
-          return cat?.type === 'recette' || cat?.type === 'depense'
-        })
+        this.allTransactions = this.allTransactions.filter((t) => t.type === 'recette' || t.type === 'depense')
       } else {
         // Filtrer par type spécifique
-        this.allTransactions = this.allTransactions.filter((t) => {
-          const cat = this.categories.find((c) => c.id === t.categorie_id)
-          return cat?.type === this.transactionType
-        })
+        this.allTransactions = this.allTransactions.filter((t) => t.type === this.transactionType)
       }
 
       this.applyFilters()
@@ -212,9 +206,9 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
         }
         const item = categoryMap.get(cat.id)!
         const amount = t.quantite * t.prix_unitaire
-        if (cat.type === 'recette') {
+        if (t.type === 'recette') {
           item.montant += amount
-        } else if (cat.type === 'depense') {
+        } else if (t.type === 'depense') {
           item.montant -= amount
         }
       }
@@ -303,10 +297,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   }
 
   getFilteredCategories(): Category[] {
-    if (this.transactionType === 'all') {
-      return this.categories.filter((cat) => cat.type === 'recette' || cat.type === 'depense')
-    }
-    return this.categories.filter((cat) => cat.type === this.transactionType)
+    return this.categories
   }
 
   downloadPdf(): void {
@@ -315,11 +306,10 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     let totalDepenses = 0
 
     this.filteredTransactions.forEach((t) => {
-      const cat = this.categories.find((c) => c.id === t.categorie_id)
       const amount = t.quantite * t.prix_unitaire
-      if (cat?.type === 'recette') {
+      if (t.type === 'recette') {
         totalRecettes += amount
-      } else if (cat?.type === 'depense') {
+      } else if (t.type === 'depense') {
         totalDepenses += amount
       }
     })
@@ -366,13 +356,13 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   }
 
   getTransactionSign(categoryId: number): string {
-    const cat = this.categories.find((c) => c.id === categoryId)
-    return cat?.type === 'recette' ? '+' : '-'
+    const transaction = this.filteredTransactions.find((t) => t.categorie_id === categoryId)
+    return transaction?.type === 'recette' ? '+' : '-'
   }
 
   isRecetteCategory(categoryId: number): boolean {
-    const cat = this.categories.find((c) => c.id === categoryId)
-    return cat?.type === 'recette'
+    const transaction = this.filteredTransactions.find((t) => t.categorie_id === categoryId)
+    return transaction?.type === 'recette'
   }
 
   getPaginationPages(): any[] {
@@ -394,11 +384,10 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
 
   getTotalAmount(): number {
     return this.filteredTransactions.reduce((sum, t) => {
-      const cat = this.categories.find((c) => c.id === t.categorie_id)
       const amount = t.quantite * t.prix_unitaire
-      if (cat?.type === 'recette') {
+      if (t.type === 'recette') {
         return sum + amount
-      } else if (cat?.type === 'depense') {
+      } else if (t.type === 'depense') {
         return sum - amount
       }
       return sum
@@ -436,7 +425,6 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     this.filteredTransactions.forEach((t) => {
       const date = new Date(t.date)
       const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-      const cat = this.categories.find((c) => c.id === t.categorie_id)
       const amount = t.quantite * t.prix_unitaire
 
       if (!monthlyMap.has(month)) {
@@ -444,7 +432,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
       }
 
       const item = monthlyMap.get(month)!
-      if (cat?.type === 'recette') {
+      if (t.type === 'recette') {
         item.recettes += amount
       } else {
         item.depenses += amount

@@ -3,6 +3,16 @@ import { supabase } from '../config/supabase.js'
 import type { Category } from '../models/Category.js'
 import type { AuthenticatedRequest } from '../middleware/auth.js'
 
+const normalizeCategoryName = (value: string): string =>
+  value.trim().replace(/\s+/g, ' ').toLowerCase()
+
+const CATEGORY_TYPES = ['recette', 'depense'] as const
+type CategoryType = (typeof CATEGORY_TYPES)[number]
+
+const normalizeCategoryType = (value: unknown): CategoryType => {
+  return value === 'recette' || value === 'depense' ? value : 'depense'
+}
+
 export const getCategories = async (
   req: AuthenticatedRequest,
   res: Response
@@ -12,20 +22,21 @@ export const getCategories = async (
     return
   }
 
-  const type = typeof req.query.type === 'string' ? req.query.type : undefined
   const userId = parseInt(req.userId, 10)
+  const typeQuery = typeof req.query.type === 'string' ? req.query.type : undefined
 
   let query = supabase
     .from('categories')
     .select('*')
     .eq('user_id', userId)
-    .order('id', { ascending: true })
+    .order('nom', { ascending: true })
 
-  if (type && type.trim() !== '') {
-    query = query.eq('type', type)
+  if (typeQuery === 'recette' || typeQuery === 'depense') {
+    query = query.eq('type', typeQuery)
   }
 
   const { data, error } = await query
+
   const categories = data as Category[] | null
   res.json({ data: categories, error })
 }
@@ -41,9 +52,30 @@ export const createCategory = async (
 
   const { nom, type } = req.body
   const userId = parseInt(req.userId, 10)
+  const sanitizedName = typeof nom === 'string' ? nom.trim().replace(/\s+/g, ' ') : ''
+  const sanitizedType = normalizeCategoryType(type)
 
-  if (!nom || !type) {
-    res.status(400).json({ message: 'Nom et type requis' })
+  if (!sanitizedName) {
+    res.status(400).json({ message: 'Nom requis' })
+    return
+  }
+
+  const { data: existingCategories, error: existingError } = await supabase
+    .from('categories')
+    .select('id, nom')
+    .eq('user_id', userId)
+
+  if (existingError) {
+    res.status(400).json({ message: 'Erreur lors de la vérification des catégories', error: existingError.message })
+    return
+  }
+
+  const duplicate = (existingCategories || []).some((category: { id: number; nom: string }) =>
+    normalizeCategoryName(category.nom) === normalizeCategoryName(sanitizedName)
+  )
+
+  if (duplicate) {
+    res.status(409).json({ message: `Une catégorie "${sanitizedName}" existe déjà pour vous` })
     return
   }
 
@@ -51,25 +83,25 @@ export const createCategory = async (
     .from('categories')
     .insert({
       user_id: userId,
-      nom,
-      type,
+      nom: sanitizedName,
+      type: sanitizedType,
     })
     .select()
+    .single()
 
   if (error) {
     console.error('Supabase error creating category:', error)
-    
-    // Gestion spécifique de l'erreur de contrainte unique
+
     if (error.code === '23505') {
-      res.status(409).json({ message: `Une catégorie "${nom}" existe déjà pour vous` })
+      res.status(409).json({ message: `Une catégorie "${sanitizedName}" existe déjà pour vous` })
       return
     }
-    
+
     res.status(400).json({ message: 'Erreur lors de la création de la catégorie', error: error.message })
     return
   }
 
-  res.json(data)
+  res.json({ data })
 }
 
 export const updateCategory = async (
@@ -83,11 +115,42 @@ export const updateCategory = async (
 
   const { id } = req.params
   const { nom, type } = req.body
+  const sanitizedName = typeof nom === 'string' ? nom.trim().replace(/\s+/g, ' ') : ''
+  const sanitizedType = type === undefined ? undefined : normalizeCategoryType(type)
   const userId = parseInt(req.userId, 10)
+
+  if (!sanitizedName) {
+    res.status(400).json({ message: 'Nom requis' })
+    return
+  }
+
+  const { data: existingCategories, error: existingError } = await supabase
+    .from('categories')
+    .select('id, nom')
+    .eq('user_id', userId)
+
+  if (existingError) {
+    res.status(400).json({ message: 'Erreur lors de la vérification des catégories', error: existingError.message })
+    return
+  }
+
+  const duplicate = (existingCategories || []).some((category: { id: number; nom: string }) =>
+    category.id !== Number(id) && normalizeCategoryName(category.nom) === normalizeCategoryName(sanitizedName)
+  )
+
+  if (duplicate) {
+    res.status(409).json({ message: `Une catégorie "${sanitizedName}" existe déjà pour vous` })
+    return
+  }
+
+  const updatePayload: { nom: string; type?: CategoryType } = { nom: sanitizedName }
+  if (sanitizedType) {
+    updatePayload.type = sanitizedType
+  }
 
   const { data, error } = await supabase
     .from('categories')
-    .update({ nom, type })
+    .update(updatePayload)
     .eq('id', id)
     .eq('user_id', userId)
     .select()
@@ -102,7 +165,7 @@ export const updateCategory = async (
     return
   }
 
-  res.json(data[0])
+  res.json({ data: data[0] })
 }
 
 export const deleteCategory = async (

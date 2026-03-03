@@ -18,6 +18,23 @@
 
       <!-- Right Section -->
       <div class="flex items-center gap-2 sm:gap-4 w-full sm:w-auto flex-wrap justify-end">
+        <!-- Categories Button -->
+        <button
+          (click)="goToCategories()"
+          class="px-3 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-sm whitespace-nowrap"
+          title="Gérer les catégories"
+        >
+          <span class="inline-flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            <span class="hidden sm:inline">Catégories</span>
+          </span>
+        </button>
+
         <!-- User Avatar & Profile Button -->
         <button
           (click)="goToProfile()"

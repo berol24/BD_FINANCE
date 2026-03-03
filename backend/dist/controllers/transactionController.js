@@ -5,16 +5,20 @@ export const getTransactions = async (req, res) => {
         return;
     }
     const type = typeof req.query.type === 'string' ? req.query.type : undefined;
-    const userId = parseInt(req.userId, 10);
+    const userId = Number.parseInt(req.userId, 10);
     let query = supabase
         .from('transactions')
-        .select('*')
+        .select('id, user_id, date, type, designation, quantite, prix_unitaire, categorie_id')
         .eq('user_id', userId)
-        .order('id', { ascending: true });
+        .order('date', { ascending: false });
     if (type && type.trim() !== '') {
         query = query.eq('type', type);
     }
     const { data, error } = await query;
+    // Debug: afficher les données retournées
+    if (data && data.length > 0) {
+        console.log('🔍 Backend - Première transaction:', JSON.stringify(data[0], null, 2));
+    }
     const transactions = data;
     res.json({ data: transactions, error });
 };
@@ -23,12 +27,18 @@ export const createTransaction = async (req, res) => {
         res.status(401).json({ message: 'User not authenticated' });
         return;
     }
-    const { designation, quantite, prix_unitaire, categorie_id, date } = req.body;
+    const { designation, quantite, prix_unitaire, categorie_id, date, type } = req.body;
     const userId = parseInt(req.userId, 10);
-    // Meilleure validation
-    if (!designation || quantite === undefined || quantite === null || prix_unitaire === undefined || prix_unitaire === null || !categorie_id) {
-        console.error('Validation failed:', { designation, quantite, prix_unitaire, categorie_id });
-        res.status(400).json({ message: 'Designation, quantité, prix et catégorie requis' });
+    const sanitizedType = type === 'depense' ? 'depense' : type === 'recette' ? 'recette' : null;
+    if (!designation ||
+        quantite === undefined ||
+        quantite === null ||
+        prix_unitaire === undefined ||
+        prix_unitaire === null ||
+        !categorie_id ||
+        !sanitizedType) {
+        console.error('Validation failed:', { designation, quantite, prix_unitaire, categorie_id, type });
+        res.status(400).json({ message: 'Designation, quantité, prix, catégorie et type requis' });
         return;
     }
     const { data, error } = await supabase
@@ -39,6 +49,7 @@ export const createTransaction = async (req, res) => {
         quantite: Number(quantite),
         prix_unitaire: Number(prix_unitaire),
         categorie_id: Number(categorie_id),
+        type: sanitizedType,
         date: date || new Date().toISOString(),
     })
         .select();
@@ -55,11 +66,16 @@ export const updateTransaction = async (req, res) => {
         return;
     }
     const { id } = req.params;
-    const { designation, quantite, prix_unitaire, categorie_id, date } = req.body;
+    const { designation, quantite, prix_unitaire, categorie_id, date, type } = req.body;
     const userId = parseInt(req.userId, 10);
+    const sanitizedType = type === 'depense' ? 'depense' : type === 'recette' ? 'recette' : null;
+    if (!sanitizedType) {
+        res.status(400).json({ message: 'Type de transaction invalide' });
+        return;
+    }
     const { data, error } = await supabase
         .from('transactions')
-        .update({ designation, quantite, prix_unitaire, categorie_id, date })
+        .update({ designation, quantite, prix_unitaire, categorie_id, date, type: sanitizedType })
         .eq('id', id)
         .eq('user_id', userId)
         .select();
@@ -141,7 +157,7 @@ export const getChartData = async (req, res) => {
         // Fetch transactions in the period
         const { data: transactions, error } = await supabase
             .from('transactions')
-            .select('*, categories(type)')
+            .select('*')
             .eq('user_id', userId)
             .gte('date', startDate.toISOString())
             .lte('date', endDate.toISOString());
@@ -165,7 +181,7 @@ export const getChartData = async (req, res) => {
                 const monthKey = txDate.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
                 const amount = t.quantite * t.prix_unitaire;
                 if (chartData[monthKey]) {
-                    if (t.categories?.type === 'recette') {
+                    if (t.type === 'recette') {
                         chartData[monthKey].recettes += amount;
                     }
                     else {
