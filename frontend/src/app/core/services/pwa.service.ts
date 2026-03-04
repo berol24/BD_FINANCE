@@ -8,19 +8,15 @@ export class PwaService {
   private canInstallCallback: ((can: boolean) => void)[] = []
 
   constructor() {
-    console.log('🚀 [PWA] PwaService initialized')
     if (typeof window !== 'undefined') {
-      console.log('[PWA] Window defined - setting up listeners')
       // Événement standard Android
       window.addEventListener('beforeinstallprompt', (e: any) => {
         e.preventDefault()
         this.deferredPrompt = e
-        console.log('[PWA] beforeinstallprompt captured - Android PWA ready')
         this.notifyCanInstall(true)
       })
 
       window.addEventListener('appinstalled', () => {
-        console.log('[PWA] App installed - hiding install button')
         this.notifyCanInstall(false)
         this.deferredPrompt = null
       })
@@ -34,17 +30,14 @@ export class PwaService {
   private canShowInstallButton(): boolean {
     // Si déjà installé (mode standalone), ne pas montrer
     if (this.isStandalone()) {
-      console.log('[PWA] Already installed - hiding button')
       return false
     }
 
     // Si mobile, montrer le bouton
     if (this.isSimpleMobile()) {
-      console.log('[PWA] Mobile detected - SHOWING install button')
       return true
     }
 
-    console.log('[PWA] Desktop detected - hiding button')
     return false
   }
 
@@ -66,14 +59,8 @@ export class PwaService {
 
   /** Vérifier immédiatement la capacité d'installation */
   private checkInstallCapability(): void {
-    console.log('[PWA] === Checking Install Capability ===')
-    console.log('[PWA] User Agent:', navigator.userAgent)
-    console.log('[PWA] Standalone mode:', this.isStandalone())
-    console.log('[PWA] Is Mobile:', this.isSimpleMobile())
-
     // Notifier avec l'état actuel
     const canShow = this.canShowInstallButton()
-    console.log('[PWA] Can show button:', canShow)
     this.notifyCanInstall(canShow)
   }
 
@@ -82,46 +69,39 @@ export class PwaService {
     this.canInstallCallback.push(callback)
     // Callback IMMÉDIAT avec l'état actuel
     const canShow = this.canShowInstallButton()
-    console.log('[PWA] Callback avec état initial:', canShow)
     callback(canShow)
   }
 
   /** Notifier tous les subscribers du changement d'état */
   private notifyCanInstall(can: boolean): void {
-    console.log('[PWA] notifyCanInstall called:', can)
     this.canInstallCallback.forEach((callback) => {
       try {
         callback(can)
       } catch (error) {
-        console.error('[PWA] Error in callback:', error)
+        console.error('❌ [PWA] Erreur lors de l\'exécution du callback')
       }
     })
   }
 
   /** Installer l'app */
   async install(): Promise<void> {
-    console.log('[PWA] Install clicked')
-
     // Cas 1: Android avec beforeinstallprompt
     if (this.deferredPrompt) {
-      console.log('[PWA] Installing via beforeinstallprompt (Android)')
       try {
         this.deferredPrompt.prompt()
         const { outcome } = await this.deferredPrompt.userChoice
         if (outcome === 'accepted') {
-          console.log('[PWA] Installation accepted')
           this.deferredPrompt = null
           this.notifyCanInstall(false)
         }
       } catch (error) {
-        console.error('[PWA] Error during installation:', error)
+        console.error('❌ Erreur lors de l\'installation')
       }
       return
     }
 
     // Cas 2: iOS - Instructions détaillées
     if (this.isIosDevice()) {
-      console.log('[PWA] Installing on iOS - showing instructions')
       const isSafari = /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent)
 
       const instructions = isSafari
@@ -144,8 +124,7 @@ export class PwaService {
     }
 
     // Cas 3: Autres navigateurs - essayer navigator.share
-    console.log('[PWA] Trying navigator.share fallback')
-    alert('Merci de votre intérêt!\n\nPour installer cette app:\n\n' +
+    alert('Merci de votre intérêt!\n\nPour installer cette app:\n\n' + +
           '• Android: Vérifiez les options du navigateur\n' +
           '• iPhone: Utilisez Safari et appuyez sur Partage')
   }

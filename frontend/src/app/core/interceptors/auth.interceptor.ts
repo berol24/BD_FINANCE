@@ -23,7 +23,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         return next(req)
       }
 
-      console.log('✅ Token valide ajouté à la requête:', req.url)
+      console.debug('✅ Token ajouté à la requête')
       const authenticatedRequest = req.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`,
