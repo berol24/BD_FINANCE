@@ -8,10 +8,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 // CORS middleware FIRST
 app.use((req, res, next) => {
+    const corsOrigin = process.env.CORS_ORIGIN;
     const allowedOrigins = [
         'http://localhost:4200',
         'http://localhost:3000',
         'https://bd-finance.pages.dev',
+        'https://bd-finance-frontend.onrender.com',
+        ...(corsOrigin ? [corsOrigin] : []),
     ];
     const origin = req.headers.origin;
     if (origin && allowedOrigins.includes(origin)) {
