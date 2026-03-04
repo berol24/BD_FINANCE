@@ -6,139 +6,148 @@ import { Injectable } from '@angular/core'
 export class PwaService {
   private deferredPrompt: any = null
   private canInstallCallback: ((can: boolean) => void)[] = []
-  private isIOSDevice: boolean = false
 
   constructor() {
+    console.log('🚀 [PWA] PwaService initialized')
     if (typeof window !== 'undefined') {
-      // Détection iOS
-      this.isIOSDevice = this.isIos()
-      
+      console.log('[PWA] Window defined - setting up listeners')
       // Événement standard Android
       window.addEventListener('beforeinstallprompt', (e: any) => {
         e.preventDefault()
         this.deferredPrompt = e
+        console.log('[PWA] beforeinstallprompt captured - Android PWA ready')
         this.notifyCanInstall(true)
       })
 
       window.addEventListener('appinstalled', () => {
+        console.log('[PWA] App installed - hiding install button')
         this.notifyCanInstall(false)
         this.deferredPrompt = null
       })
 
-      // Vérifier immédiatement si c'est un mobile capable
+      // Vérifier immédiatement l'installation
       this.checkInstallCapability()
     }
   }
 
+  /** Déterminer si on doit montrer le bouton installer */
   private canShowInstallButton(): boolean {
-    return !this.isStandalone() && this.isMobile()
-  }
-
-  private checkInstallCapability(): void {
-    // Vérifier display mode standalone (déjà installé)
+    // Si déjà installé (mode standalone), ne pas montrer
     if (this.isStandalone()) {
-      console.log('[PWA] App already installed in standalone mode')
-      this.notifyCanInstall(false)
-      return
+      console.log('[PWA] Already installed - hiding button')
+      return false
     }
 
-    // Détecter le type d'appareil
-    const isMobileDevice = this.isMobile()
-    const isIOSMobile = this.isIos()
-    
-    console.log('[PWA] Device detection:')
-    console.log('  - Is Mobile:', isMobileDevice)
-    console.log('  - Is iOS:', isIOSMobile)
-    console.log('  - User Agent:', navigator.userAgent)
-    console.log('  - Is Standalone:', this.isStandalone())
-    
-    // Sur mobile (iOS ou Android), toujours montrer le bouton
-    if (this.canShowInstallButton()) {
-      console.log('✅ [PWA] Mobile detected - SHOWING install button')
-      this.notifyCanInstall(true)
-      return
+    // Si mobile, montrer le bouton
+    if (this.isSimpleMobile()) {
+      console.log('[PWA] Mobile detected - SHOWING install button')
+      return true
     }
 
-    // Sur desktop: ne pas montrer
-    console.log('❌ [PWA] Desktop detected - hiding install button')
-    this.notifyCanInstall(false)
+    console.log('[PWA] Desktop detected - hiding button')
+    return false
   }
 
-  private isIos(): boolean {
-    const ua = navigator.userAgent
-    const classicIOS = /iPad|iPhone|iPod/.test(ua)
-    const iPadOSDesktopUA = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1
-    return classicIOS || iPadOSDesktopUA
+  /** Simpler method - just check User Agent pour déterminer si c'est CLAIREMENT un mobile */
+  private isSimpleMobile(): boolean {
+    return /Android|iPhone|iPad|iPod|Mobile|Tablet|webOS|Opera Mini|BlackBerry|IEMobile/i.test(
+      navigator.userAgent
+    )
   }
 
-  private isTouchDevice(): boolean {
-    return navigator.maxTouchPoints > 0 || 'ontouchstart' in window
-  }
-
-  private isMobile(): boolean {
-    const uaMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    return uaMobile || this.isIos() || this.isTouchDevice()
-  }
-
-  private isPwaCapable(): boolean {
-    return 'serviceWorker' in navigator
-  }
-
+  /** Check if already installed in standalone mode */
   private isStandalone(): boolean {
-    return (window.navigator as any).standalone === true || 
-           window.matchMedia('(display-mode: standalone)').matches
+    if (typeof window === 'undefined') return false
+    return (
+      (window.navigator as any).standalone === true ||
+      window.matchMedia('(display-mode: standalone)').matches
+    )
   }
 
+  /** Vérifier immédiatement la capacité d'installation */
+  private checkInstallCapability(): void {
+    console.log('[PWA] === Checking Install Capability ===')
+    console.log('[PWA] User Agent:', navigator.userAgent)
+    console.log('[PWA] Standalone mode:', this.isStandalone())
+    console.log('[PWA] Is Mobile:', this.isSimpleMobile())
+
+    // Notifier avec l'état actuel
+    const canShow = this.canShowInstallButton()
+    console.log('[PWA] Can show button:', canShow)
+    this.notifyCanInstall(canShow)
+  }
+
+  /** S'abonner aux changements de disponibilité d'installation */
   onCanInstallChange(callback: (can: boolean) => void): void {
     this.canInstallCallback.push(callback)
-    // Callback immédiat avec l'état actuel
-    const canInstall = this.canShowInstallButton()
-    console.log('[PWA] Initial canInstall state:', canInstall)
-    callback(canInstall)
+    // Callback IMMÉDIAT avec l'état actuel
+    const canShow = this.canShowInstallButton()
+    console.log('[PWA] Callback avec état initial:', canShow)
+    callback(canShow)
   }
 
+  /** Notifier tous les subscribers du changement d'état */
   private notifyCanInstall(can: boolean): void {
-    this.canInstallCallback.forEach((callback) => callback(can))
+    console.log('[PWA] notifyCanInstall called:', can)
+    this.canInstallCallback.forEach((callback) => {
+      try {
+        callback(can)
+      } catch (error) {
+        console.error('[PWA] Error in callback:', error)
+      }
+    })
   }
 
+  /** Installer l'app */
   async install(): Promise<void> {
-    // Cas Android avec beforeinstallprompt
+    console.log('[PWA] Install clicked')
+
+    // Cas 1: Android avec beforeinstallprompt
     if (this.deferredPrompt) {
+      console.log('[PWA] Installing via beforeinstallprompt (Android)')
       try {
         this.deferredPrompt.prompt()
         const { outcome } = await this.deferredPrompt.userChoice
         if (outcome === 'accepted') {
+          console.log('[PWA] Installation accepted')
           this.deferredPrompt = null
           this.notifyCanInstall(false)
         }
       } catch (error) {
-        console.error('Erreur installation PWA:', error)
+        console.error('[PWA] Error during installation:', error)
       }
       return
     }
 
-    // Cas iOS - Instructions détaillées
-    if (this.isIOSDevice) {
-      const instructions = this.isIos() && /Safari/.test(navigator.userAgent)
+    // Cas 2: iOS - Instructions détaillées
+    if (this.isIosDevice()) {
+      console.log('[PWA] Installing on iOS - showing instructions')
+      const isSafari = /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent)
+
+      const instructions = isSafari
         ? '📱 Installation sur iOS (Safari):\n\n' +
           '1️⃣ Appuyez sur l\'icône de partage 📤\n' +
-          '   (en bas de l\'écran, au centre)\n\n' +
-          '2️⃣ Faites défiler et touchez\n' +
+          '   (en bas de l\'écran, centre)\n\n' +
+          '2️⃣ Scrollez et appuyez sur:\n' +
           '   "Sur l\'écran d\'accueil" ➕\n\n' +
-          '3️⃣ Touchez "Ajouter" en haut à droite\n\n' +
-          '✅ L\'icône BD Finance apparaîtra\n' +
-          '   sur votre écran d\'accueil!'
-        : '📱 Installation sur iOS:\n\n' +
-          '⚠️ Veuillez ouvrir ce site dans Safari\n' +
+          '3️⃣ Appuyez sur "Ajouter" (haut droit)\n\n' +
+          '✅ L\'icône BD Finance s\'ajoutera\n' +
+          '   à votre écran d\'accueil!'
+        : '📱 Installation iOS:\n\n' +
+          '⚠️ Ouvrez ce site dans Safari\n' +
           'pour pouvoir l\'installer.\n\n' +
-          'Copiez l\'URL et ouvrez-la dans Safari,\n' +
-          'puis suivez les instructions d\'installation.'
-      
+          'Copiez l\'URL et ouvrez dans Safari,\n' +
+          'puis suivez les instructions.'
+
       alert(instructions)
       return
     }
 
-    alert('La fonctionnalité d\'installation n\'est pas disponible sur votre navigateur.')
+    // Cas 3: Autres navigateurs - essayer navigator.share
+    console.log('[PWA] Trying navigator.share fallback')
+    alert('Merci de votre intérêt!\n\nPour installer cette app:\n\n' +
+          '• Android: Vérifiez les options du navigateur\n' +
+          '• iPhone: Utilisez Safari et appuyez sur Partage')
   }
 
   shareApp(): void {
@@ -167,6 +176,12 @@ export class PwaService {
     }
   }
 
+  /** Détecter iOS simplement */
+  private isIosDevice(): boolean {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent)
+  }
+
+  /** Enregistrer le service worker */
   installServiceWorker(): void {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js').catch(() => {
