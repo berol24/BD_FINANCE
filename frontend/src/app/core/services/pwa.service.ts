@@ -30,36 +30,54 @@ export class PwaService {
     }
   }
 
+  private canShowInstallButton(): boolean {
+    return !this.isStandalone() && this.isMobile()
+  }
+
   private checkInstallCapability(): void {
     // Vérifier display mode standalone (déjà installé)
     if (this.isStandalone()) {
-      console.log('[PWA] App already installed')
+      console.log('[PWA] App already installed in standalone mode')
       this.notifyCanInstall(false)
       return
     }
 
-    // EN LOCAL & MOBILE: Montrer le bouton sur tout mobile (iOS et Android)
-    // This allows testing the UI on localhost
+    // Détecter le type d'appareil
     const isMobileDevice = this.isMobile()
-    console.log('[PWA] Is mobile:', isMobileDevice, '| User Agent:', navigator.userAgent)
+    const isIOSMobile = this.isIos()
     
-    if (isMobileDevice) {
-      console.log('[PWA] Mobile detected - showing install button')
+    console.log('[PWA] Device detection:')
+    console.log('  - Is Mobile:', isMobileDevice)
+    console.log('  - Is iOS:', isIOSMobile)
+    console.log('  - User Agent:', navigator.userAgent)
+    console.log('  - Is Standalone:', this.isStandalone())
+    
+    // Sur mobile (iOS ou Android), toujours montrer le bouton
+    if (this.canShowInstallButton()) {
+      console.log('✅ [PWA] Mobile detected - SHOWING install button')
       this.notifyCanInstall(true)
       return
     }
 
     // Sur desktop: ne pas montrer
-    console.log('[PWA] Desktop detected - hiding install button')
+    console.log('❌ [PWA] Desktop detected - hiding install button')
     this.notifyCanInstall(false)
   }
 
   private isIos(): boolean {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !navigator.userAgent.includes('CriOS')
+    const ua = navigator.userAgent
+    const classicIOS = /iPad|iPhone|iPod/.test(ua)
+    const iPadOSDesktopUA = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1
+    return classicIOS || iPadOSDesktopUA
+  }
+
+  private isTouchDevice(): boolean {
+    return navigator.maxTouchPoints > 0 || 'ontouchstart' in window
   }
 
   private isMobile(): boolean {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    const uaMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    return uaMobile || this.isIos() || this.isTouchDevice()
   }
 
   private isPwaCapable(): boolean {
@@ -74,7 +92,8 @@ export class PwaService {
   onCanInstallChange(callback: (can: boolean) => void): void {
     this.canInstallCallback.push(callback)
     // Callback immédiat avec l'état actuel
-    const canInstall = !this.isStandalone() && this.isMobile()
+    const canInstall = this.canShowInstallButton()
+    console.log('[PWA] Initial canInstall state:', canInstall)
     callback(canInstall)
   }
 
@@ -98,15 +117,24 @@ export class PwaService {
       return
     }
 
-    // Cas iOS
+    // Cas iOS - Instructions détaillées
     if (this.isIOSDevice) {
-      alert(
-        'Pour installer l\'application sur iOS:\n\n' +
-          '1. Appuyez sur le bouton de partage (deux flèches)\n' +
-          '2. Sélectionnez "Sur l\'écran d\'accueil"\n' +
-          '3. Appuyez sur "Ajouter"\n\n' +
-          'L\'application sera ensuite accessible depuis votre écran d\'accueil.'
-      )
+      const instructions = this.isIos() && /Safari/.test(navigator.userAgent)
+        ? '📱 Installation sur iOS (Safari):\n\n' +
+          '1️⃣ Appuyez sur l\'icône de partage 📤\n' +
+          '   (en bas de l\'écran, au centre)\n\n' +
+          '2️⃣ Faites défiler et touchez\n' +
+          '   "Sur l\'écran d\'accueil" ➕\n\n' +
+          '3️⃣ Touchez "Ajouter" en haut à droite\n\n' +
+          '✅ L\'icône BD Finance apparaîtra\n' +
+          '   sur votre écran d\'accueil!'
+        : '📱 Installation sur iOS:\n\n' +
+          '⚠️ Veuillez ouvrir ce site dans Safari\n' +
+          'pour pouvoir l\'installer.\n\n' +
+          'Copiez l\'URL et ouvrez-la dans Safari,\n' +
+          'puis suivez les instructions d\'installation.'
+      
+      alert(instructions)
       return
     }
 
