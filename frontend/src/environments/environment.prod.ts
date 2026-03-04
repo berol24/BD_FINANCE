@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://bd-finance-backend.onrender.com/api',
+  apiBaseUrl: 'https://bd-finance.onrender.com/api',
 }

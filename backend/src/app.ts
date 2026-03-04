@@ -16,7 +16,7 @@ app.use((req, res, next) => {
     'http://localhost:4200',
     'http://localhost:3000',
     'https://bd-finance.pages.dev',
-    'https://bd-finance-frontend.onrender.com',
+    'https://bd-finance-tbr7.onrender.com',
     ...(corsOrigin ? [corsOrigin] : []),
   ]
   const origin = req.headers.origin
