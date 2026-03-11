@@ -13,13 +13,21 @@
 
     <!-- Edit Transaction Modal -->
     <div *ngIf="editingTransaction" class="fixed inset-0 z-50 flex items-center justify-center">
-      <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="onEditCancel()"></div>
+      <button
+        type="button"
+        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        (click)="onEditCancel()"
+        aria-label="Fermer la fenêtre de modification"
+        title="Fermer"
+      ></button>
       <div class="relative w-full max-w-2xl mx-4 max-h-screen overflow-y-auto">
         <div class="bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-2xl p-8 border border-slate-200/50">
           <!-- Close Button -->
           <button
             (click)="onEditCancel()"
             class="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-700 transition-colors"
+            aria-label="Fermer"
+            title="Fermer"
           >
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -29,7 +37,7 @@
           <app-add-transaction-form
             [editingTransaction]="editingTransaction"
             (success)="onEditSuccess()"
-            (cancel)="onEditCancel()"
+            (formCancel)="onEditCancel()"
           ></app-add-transaction-form>
         </div>
       </div>
@@ -78,20 +86,24 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <!-- Search -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Recherche</label>
+            <label for="transactions-search" class="block text-sm font-semibold text-slate-700 mb-2">Recherche</label>
             <input
+              id="transactions-search"
               [(ngModel)]="searchTerm"
               type="text"
               placeholder="Tapez pour chercher..."
+              title="Recherche"
               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
             />
           </div>
 
           <!-- Category -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Catégorie</label>
+            <label for="transactions-category" class="block text-sm font-semibold text-slate-700 mb-2">Catégorie</label>
             <select
+              id="transactions-category"
               [(ngModel)]="selectedCategory"
+              title="Catégorie"
               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
             >
               <option value="0">Toutes</option>
@@ -103,29 +115,35 @@
 
           <!-- Start Date -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Début</label>
+            <label for="transactions-start-date" class="block text-sm font-semibold text-slate-700 mb-2">Début</label>
             <input
+              id="transactions-start-date"
               [(ngModel)]="startDate"
               type="date"
+              title="Date de début"
               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
             />
           </div>
 
           <!-- End Date -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Fin</label>
+            <label for="transactions-end-date" class="block text-sm font-semibold text-slate-700 mb-2">Fin</label>
             <input
+              id="transactions-end-date"
               [(ngModel)]="endDate"
               type="date"
+              title="Date de fin"
               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
             />
           </div>
 
           <!-- Items per Page -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Par page</label>
+            <label for="transactions-items-per-page" class="block text-sm font-semibold text-slate-700 mb-2">Par page</label>
             <select
+              id="transactions-items-per-page"
               [(ngModel)]="itemsPerPage"
+              title="Nombre d'éléments par page"
               class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
             >
               <option value="10">10</option>
@@ -208,7 +226,7 @@
                     <span class="font-semibold text-slate-900">{{ cat.nom }}</span>
                   </div>
                 </td>
-                <td class="px-6 py-4 text-sm font-bold text-right" [ngClass]="transactionType === 'recette' ? 'text-emerald-600' : 'text-red-600'">
+                <td class="px-6 py-4 text-sm font-bold text-right" [ngClass]="getAmountClass(cat.montant)">
                   {{ cat.montant | number: '1.2-2' }} €
                 </td>
                 <td class="px-6 py-4 text-sm font-semibold text-right text-slate-600">
@@ -217,7 +235,7 @@
               </tr>
               <tr class="bg-gradient-to-r from-slate-900/5 to-slate-800/5 border-t-2 border-slate-200 font-bold">
                 <td class="px-6 py-4 text-sm text-slate-900">Total</td>
-                <td class="px-6 py-4 text-sm text-right" [ngClass]="transactionType === 'recette' ? 'text-emerald-600' : 'text-red-600'">
+                <td class="px-6 py-4 text-sm text-right" [ngClass]="getAmountClass(getTotalAmount())">
                   {{ getTotalAmount() | number: '1.2-2' }} €
                 </td>
                 <td class="px-6 py-4 text-sm text-right text-slate-600">100%</td>
@@ -267,8 +285,8 @@
                 <td class="px-6 py-4 text-sm text-slate-600">
                   {{ getCategoryName(transaction.categorie_id) }}
                 </td>
-                <td class="px-6 py-4 text-sm font-bold text-right" [ngClass]="isRecetteCategory(transaction.categorie_id) ? 'text-emerald-600' : 'text-red-600'">
-                  {{ getTransactionSign(transaction.categorie_id) }}{{ (transaction.quantite * transaction.prix_unitaire) | number: '1.2-2' }} €
+                <td class="px-6 py-4 text-sm font-bold text-right" [ngClass]="isPositiveTransaction(transaction) ? 'text-emerald-600' : 'text-red-600'">
+                  {{ getTransactionSign(transaction) }}{{ getAbsoluteAmount(transaction) | number: '1.2-2' }} €
                 </td>
                 <td class="px-6 py-4 text-sm text-center">
                   <div class="flex items-center justify-center gap-2">
@@ -348,7 +366,7 @@
       <!-- Summary -->
       <div class="bg-gradient-to-br from-emerald-50 to-blue-50 rounded-xl p-6 border border-emerald-200">
         <p class="text-lg font-bold text-slate-900">
-          Total: <span class="text-emerald-600">
+          Total: <span [ngClass]="getAmountClass(getTotalAmount())">
             {{ getTotalAmount() | number: '1.2-2' }} €
           </span>
         </p>

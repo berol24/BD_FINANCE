@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { TransactionService, Category } from '../../../../core/services/transaction.service'
 
 @Component({
@@ -14,6 +14,7 @@ export class CategoriesComponent implements OnInit {
   categories: Category[] = []
   loading = true
   error = ''
+  successMessage = ''
 
   newCategoryName = ''
   searchTerm = ''
@@ -21,13 +22,21 @@ export class CategoriesComponent implements OnInit {
   editingCategoryId: number | null = null
   editingCategoryName = ''
   saving = false
+  private returnTo: string | null = null
+  private resumeTransaction: 'new' | 'edit' | null = null
 
   constructor(
-    private transactionService: TransactionService,
-    private router: Router
+    private readonly transactionService: TransactionService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
+    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo')
+    const resumeTransaction = this.route.snapshot.queryParamMap.get('resumeTransaction')
+    this.resumeTransaction = resumeTransaction === 'new' || resumeTransaction === 'edit'
+      ? resumeTransaction
+      : null
     this.loadCategories()
   }
 
@@ -52,6 +61,10 @@ export class CategoriesComponent implements OnInit {
   get canCreateCategory(): boolean {
     const normalized = this.normalizeName(this.newCategoryName)
     return !!normalized && !this.categoryExists(normalized)
+  }
+
+  get isTransactionReturnFlow(): boolean {
+    return !!this.returnTo && !!this.resumeTransaction
   }
 
   async loadCategories(): Promise<void> {
@@ -86,9 +99,20 @@ export class CategoriesComponent implements OnInit {
     try {
       this.saving = true
       this.error = ''
+      this.successMessage = ''
       await this.transactionService.createCategory({ nom: sanitizedName })
       this.newCategoryName = ''
       await this.loadCategories()
+
+      if (this.returnTo && this.resumeTransaction) {
+        this.successMessage = 'Catégorie créée. Retour à la saisie en cours...'
+        await this.waitBeforeRedirect()
+        await this.router.navigateByUrl(
+          `${this.returnTo}?resumeTransaction=${this.resumeTransaction}&returnTo=${encodeURIComponent(this.returnTo)}`
+        )
+      } else {
+        this.successMessage = 'Catégorie créée avec succès.'
+      }
     } catch (err: any) {
       this.error = err?.error?.message || 'Erreur lors de la creation de la categorie'
       console.error('Erreur addCategory:', err)
@@ -155,7 +179,18 @@ export class CategoriesComponent implements OnInit {
   }
 
   goBack(): void {
+    if (this.returnTo) {
+      void this.router.navigateByUrl(this.returnTo)
+      return
+    }
+
     this.router.navigate(['/dashboard'])
+  }
+
+  private waitBeforeRedirect(): Promise<void> {
+    return new Promise((resolve) => {
+      globalThis.setTimeout(() => resolve(), 700)
+    })
   }
 
   private categoryExists(normalizedName: string, excludeId?: number): boolean {
@@ -168,7 +203,7 @@ export class CategoriesComponent implements OnInit {
   }
 
   private sanitizeName(value: string): string {
-    return value.trim().replace(/\s+/g, ' ')
+    return value.trim().split(/\s+/).join(' ')
   }
 
   private normalizeName(value: string): string {

@@ -24,6 +24,18 @@ export class TransactionTableComponent {
     return this.transactions.slice(0, 5)
   }
 
+  getAbsoluteAmount(transaction: Transaction): number {
+    return Math.abs(transaction.quantite * transaction.prix_unitaire)
+  }
+
+  getTransactionSign(transaction: Transaction): string {
+    return transaction.type === 'depense' ? '-' : '+'
+  }
+
+  getAmountClass(transaction: Transaction): string {
+    return transaction.type === 'depense' ? 'text-red-600' : 'text-emerald-600'
+  }
+
   onDelete(transactionId: number): void {
     this.delete.emit(transactionId)
   }

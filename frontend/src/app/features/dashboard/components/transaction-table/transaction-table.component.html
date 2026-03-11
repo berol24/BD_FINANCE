@@ -42,8 +42,8 @@
             <td class="px-3 sm:px-4 py-3">
               {{ transaction.prix_unitaire | number: '1.2-2' }} €
             </td>
-            <td class="px-3 sm:px-4 py-3 font-semibold text-blue-700">
-              {{ (transaction.quantite * transaction.prix_unitaire) | number: '1.2-2' }} €
+            <td class="px-3 sm:px-4 py-3 font-semibold" [ngClass]="getAmountClass(transaction)">
+              {{ getTransactionSign(transaction) }}{{ getAbsoluteAmount(transaction) | number: '1.2-2' }} €
             </td>
             <td class="px-3 sm:px-4 py-3">
               {{ getCategoryName(transaction.categorie_id) }}

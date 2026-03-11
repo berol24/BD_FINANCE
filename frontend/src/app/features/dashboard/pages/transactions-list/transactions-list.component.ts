@@ -15,6 +15,22 @@ interface CategoryAmount {
   couleur: string
 }
 
+interface TransactionFormDraft {
+  returnTo: string
+  mode: 'new' | 'edit'
+  transactionId: number | null
+  data: {
+    type: 'recette' | 'depense'
+    designation: string
+    quantite: number
+    prix_unitaire: number
+    categorie_id: number
+    date: string
+  }
+}
+
+const TRANSACTION_FORM_DRAFT_KEY = 'transaction-form-draft'
+
 @Component({
   selector: 'app-transactions-list',
   standalone: true,
@@ -65,11 +81,11 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   }
 
   constructor(
-    private authService: AuthService,
-    private transactionService: TransactionService,
-    private pdfService: PdfService,
-    private route: ActivatedRoute,
-    private router: Router
+    private readonly authService: AuthService,
+    private readonly transactionService: TransactionService,
+    private readonly pdfService: PdfService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
@@ -86,6 +102,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
         this.transactionType = 'all' as any
         this.pageTitle = 'Toutes les Transactions'
       }
+      this.restoreTransactionDraftIfNeeded()
       this.loadData()
     })
   }
@@ -139,7 +156,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
 
     // Catégorie
     if (this.selectedCategory !== '0') {
-      filtered = filtered.filter((t) => t.categorie_id === parseInt(this.selectedCategory))
+      filtered = filtered.filter((t) => t.categorie_id === Number.parseInt(this.selectedCategory, 10))
     }
 
     // Dates
@@ -161,18 +178,34 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
         aVal = new Date(a.date).getTime()
         bVal = new Date(b.date).getTime()
       } else if (this.sortBy === 'price') {
-        aVal = a.quantite * a.prix_unitaire
-        bVal = b.quantite * b.prix_unitaire
+        aVal = this.getSignedAmount(a)
+        bVal = this.getSignedAmount(b)
       } else {
         aVal = a.designation.toLowerCase()
         bVal = b.designation.toLowerCase()
       }
 
       if (this.sortOrder === 'asc') {
-        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0
-      } else {
-        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0
+        if (aVal > bVal) {
+          return 1
+        }
+
+        if (aVal < bVal) {
+          return -1
+        }
+
+        return 0
       }
+
+      if (aVal < bVal) {
+        return 1
+      }
+
+      if (aVal > bVal) {
+        return -1
+      }
+
+      return 0
     })
 
     this.filteredTransactions = filtered
@@ -205,12 +238,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
           categoryMap.set(cat.id, { nom: cat.nom, montant: 0, id: cat.id })
         }
         const item = categoryMap.get(cat.id)!
-        const amount = t.quantite * t.prix_unitaire
-        if (t.type === 'recette') {
-          item.montant += amount
-        } else if (t.type === 'depense') {
-          item.montant -= amount
-        }
+        item.montant += this.getSignedAmount(t)
       }
     })
 
@@ -226,7 +254,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     if (!this.donutCanvas) return
 
     const labels = this.categoriesAmount.map((c) => c.nom)
-    const data = this.categoriesAmount.map((c) => c.montant)
+    const data = this.categoriesAmount.map((c) => Math.abs(c.montant))
     const colors = this.categoriesAmount.map((c) => c.couleur)
 
     // Détruire le graphique existant
@@ -306,11 +334,10 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     let totalDepenses = 0
 
     this.filteredTransactions.forEach((t) => {
-      const amount = t.quantite * t.prix_unitaire
       if (t.type === 'recette') {
-        totalRecettes += amount
+        totalRecettes += this.getAbsoluteAmount(t)
       } else if (t.type === 'depense') {
-        totalDepenses += amount
+        totalDepenses += this.getAbsoluteAmount(t)
       }
     })
 
@@ -355,14 +382,12 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     return this.categories.find((c) => c.id === categoryId)?.nom || '-'
   }
 
-  getTransactionSign(categoryId: number): string {
-    const transaction = this.filteredTransactions.find((t) => t.categorie_id === categoryId)
-    return transaction?.type === 'recette' ? '+' : '-'
+  getTransactionSign(transaction: Transaction): string {
+    return this.getSignedAmount(transaction) >= 0 ? '+' : '-'
   }
 
-  isRecetteCategory(categoryId: number): boolean {
-    const transaction = this.filteredTransactions.find((t) => t.categorie_id === categoryId)
-    return transaction?.type === 'recette'
+  isPositiveTransaction(transaction: Transaction): boolean {
+    return this.getSignedAmount(transaction) >= 0
   }
 
   getPaginationPages(): any[] {
@@ -383,15 +408,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   }
 
   getTotalAmount(): number {
-    return this.filteredTransactions.reduce((sum, t) => {
-      const amount = t.quantite * t.prix_unitaire
-      if (t.type === 'recette') {
-        return sum + amount
-      } else if (t.type === 'depense') {
-        return sum - amount
-      }
-      return sum
-    }, 0)
+    return this.filteredTransactions.reduce((sum, t) => sum + this.getSignedAmount(t), 0)
   }
 
   async deleteTransaction(transactionId: number): Promise<void> {
@@ -425,7 +442,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     this.filteredTransactions.forEach((t) => {
       const date = new Date(t.date)
       const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-      const amount = t.quantite * t.prix_unitaire
+      const amount = this.getAbsoluteAmount(t)
 
       if (!monthlyMap.has(month)) {
         monthlyMap.set(month, { recettes: 0, depenses: 0 })
@@ -537,5 +554,79 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
         },
       },
     })
+  }
+
+  getAbsoluteAmount(transaction: Transaction): number {
+    return Math.abs(transaction.quantite * transaction.prix_unitaire)
+  }
+
+  getSignedAmount(transaction: Transaction): number {
+    const amount = this.getAbsoluteAmount(transaction)
+    return transaction.type === 'depense' ? -amount : amount
+  }
+
+  getAmountClass(amount: number): string {
+    return amount >= 0 ? 'text-emerald-600' : 'text-red-600'
+  }
+
+  private restoreTransactionDraftIfNeeded(): void {
+    const currentPath = this.getCurrentPath()
+    const returnTo = this.route.snapshot.queryParamMap.get('returnTo')
+    const resumeTransaction = this.route.snapshot.queryParamMap.get('resumeTransaction')
+
+    if (returnTo !== currentPath || resumeTransaction !== 'edit') {
+      return
+    }
+
+    const draft = this.readDraft()
+    if (draft?.mode !== 'edit' || draft.returnTo !== currentPath) {
+      this.clearResumeQueryParams()
+      return
+    }
+
+    this.editingTransaction = {
+      id: draft.transactionId ?? 0,
+      user_id: this.user?.id ?? 0,
+      date: `${draft.data.date}T00:00:00`,
+      type: draft.data.type,
+      designation: draft.data.designation,
+      quantite: draft.data.quantite,
+      prix_unitaire: draft.data.prix_unitaire,
+      categorie_id: draft.data.categorie_id,
+    }
+
+    sessionStorage.removeItem(TRANSACTION_FORM_DRAFT_KEY)
+    this.clearResumeQueryParams()
+  }
+
+  private readDraft(): TransactionFormDraft | null {
+    const rawDraft = sessionStorage.getItem(TRANSACTION_FORM_DRAFT_KEY)
+
+    if (!rawDraft) {
+      return null
+    }
+
+    try {
+      return JSON.parse(rawDraft) as TransactionFormDraft
+    } catch {
+      sessionStorage.removeItem(TRANSACTION_FORM_DRAFT_KEY)
+      return null
+    }
+  }
+
+  private clearResumeQueryParams(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        resumeTransaction: null,
+        returnTo: null,
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    })
+  }
+
+  private getCurrentPath(): string {
+    return this.router.url.split('?')[0]
   }
 }

@@ -5,6 +5,18 @@ import { Router, ActivatedRoute } from '@angular/router'
 import { TransactionService, Category } from '../../../../core/services/transaction.service'
 import { AuthService } from '../../../../core/services/auth.service'
 
+interface AddTransactionDraft {
+  returnTo: string
+  data: {
+    type: 'recette' | 'depense'
+    amount: number
+    categoryId: number
+    description: string
+  }
+}
+
+const ADD_TRANSACTION_DRAFT_KEY = 'standalone-transaction-draft'
+
 @Component({
   selector: 'app-add-transaction',
   standalone: true,
@@ -21,17 +33,17 @@ export class AddTransactionComponent implements OnInit {
   error = ''
 
   constructor(
-    private transactionService: TransactionService,
-    private authService: AuthService,
-    private router: Router,
-    private route: ActivatedRoute,
+    private readonly transactionService: TransactionService,
+    private readonly authService: AuthService,
+    private readonly router: Router,
+    private readonly route: ActivatedRoute,
   ) {}
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
     this.route.params.subscribe((params) => {
       this.type = params['type'] === 'depense' ? 'depense' : 'recette'
+      void this.initialize()
     })
-    await this.loadCategories()
   }
 
   async loadCategories(): Promise<void> {
@@ -78,5 +90,60 @@ export class AddTransactionComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/dashboard'])
+  }
+
+  goToCategories(): void {
+    const currentPath = this.getCurrentPath()
+    const draft: AddTransactionDraft = {
+      returnTo: currentPath,
+      data: {
+        type: this.type,
+        amount: this.amount,
+        categoryId: this.categoryId,
+        description: this.description,
+      },
+    }
+
+    sessionStorage.setItem(ADD_TRANSACTION_DRAFT_KEY, JSON.stringify(draft))
+
+    this.router.navigate(['/dashboard/categories'], {
+      queryParams: {
+        returnTo: currentPath,
+        resumeTransaction: 'new',
+      },
+    })
+  }
+
+  private restoreDraftIfNeeded(): void {
+    const rawDraft = sessionStorage.getItem(ADD_TRANSACTION_DRAFT_KEY)
+
+    if (!rawDraft) {
+      return
+    }
+
+    try {
+      const draft = JSON.parse(rawDraft) as AddTransactionDraft
+
+      if (draft.returnTo !== this.getCurrentPath()) {
+        return
+      }
+
+      this.type = draft.data.type
+      this.amount = draft.data.amount
+      this.categoryId = draft.data.categoryId
+      this.description = draft.data.description
+      sessionStorage.removeItem(ADD_TRANSACTION_DRAFT_KEY)
+    } catch {
+      sessionStorage.removeItem(ADD_TRANSACTION_DRAFT_KEY)
+    }
+  }
+
+  private getCurrentPath(): string {
+    return this.router.url.split('?')[0]
+  }
+
+  private async initialize(): Promise<void> {
+    await this.loadCategories()
+    this.restoreDraftIfNeeded()
   }
 }

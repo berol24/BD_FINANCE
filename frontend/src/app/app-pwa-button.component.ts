@@ -90,30 +90,20 @@ export class PwaButtonComponent implements OnInit {
   constructor(private pwaService: PwaService) {}
 
   ngOnInit(): void {
-    console.log('🎯 [PWA Button] Component initialized')
-    
     // Check if banner was dismissed in this session
     const isDismissed = localStorage.getItem('pwa_banner_dismissed_session') === 'true'
     this.showBanner = !isDismissed
     
     this.pwaService.onCanInstallChange((can: boolean) => {
-      console.log('📲 [PWA Button] Update - canInstall:', can)
       this.canInstall = can
-      if (can) {
-        console.log('✅ [PWA Button] AFFICHAGE DU BANNIÈRE INSTALLER')
-      } else {
-        console.log('❌ [PWA Button] Bannière cachée')
-      }
     })
   }
 
   async onInstall(): Promise<void> {
-    console.log('🖱️ [PWA Button] Click - installing...')
     await this.pwaService.install()
   }
 
   dismissBanner(): void {
-    console.log('✕ [PWA Button] Banner dismissed by user')
     this.showBanner = false
     // Hide for this session only (clears when page refreshes)
     localStorage.setItem('pwa_banner_dismissed_session', 'true')

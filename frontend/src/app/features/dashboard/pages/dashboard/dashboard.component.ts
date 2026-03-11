@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core'
 import { CommonModule } from '@angular/common'
-import { Router, RouterModule } from '@angular/router'
+import { ActivatedRoute, Router, RouterModule } from '@angular/router'
 import { AuthService, User } from '../../../../core/services/auth.service'
 import { TransactionService, Category, Transaction } from '../../../../core/services/transaction.service'
 import { HeaderComponent } from '../../components/header/header.component'
@@ -8,6 +8,22 @@ import { StatsComponent } from '../../components/stats/stats.component'
 import { ChartComponent } from '../../components/chart/chart.component'
 import { TransactionTableComponent } from '../../components/transaction-table/transaction-table.component'
 import { AddTransactionFormComponent } from '../../components/add-transaction-form/add-transaction-form.component'
+
+interface TransactionFormDraft {
+  returnTo: string
+  mode: 'new' | 'edit'
+  transactionId: number | null
+  data: {
+    type: 'recette' | 'depense'
+    designation: string
+    quantite: number
+    prix_unitaire: number
+    categorie_id: number
+    date: string
+  }
+}
+
+const TRANSACTION_FORM_DRAFT_KEY = 'transaction-form-draft'
 
 @Component({
   selector: 'app-dashboard',
@@ -40,12 +56,14 @@ export class DashboardComponent implements OnInit {
   solde = 0
 
   constructor(
-    private authService: AuthService,
-    private transactionService: TransactionService,
-    private router: Router
+    private readonly authService: AuthService,
+    private readonly transactionService: TransactionService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
+    this.restoreTransactionDraftIfNeeded()
     this.loadData()
   }
 
@@ -156,5 +174,76 @@ export class DashboardComponent implements OnInit {
   logout(): void {
     this.authService.logout()
     this.router.navigate(['/auth/login'])
+  }
+
+  private restoreTransactionDraftIfNeeded(): void {
+    const currentPath = this.getCurrentPath()
+    const returnTo = this.route.snapshot.queryParamMap.get('returnTo')
+    const resumeTransaction = this.route.snapshot.queryParamMap.get('resumeTransaction')
+
+    if (!returnTo || returnTo !== currentPath) {
+      return
+    }
+
+    if (resumeTransaction === 'new') {
+      this.showNewTransactionModal = true
+      this.clearResumeQueryParams()
+      return
+    }
+
+    if (resumeTransaction !== 'edit') {
+      return
+    }
+
+    const draft = this.readDraft()
+    if (draft?.mode !== 'edit' || draft.returnTo !== currentPath) {
+      this.clearResumeQueryParams()
+      return
+    }
+
+    this.editingTransaction = {
+      id: draft.transactionId ?? 0,
+      user_id: this.user?.id ?? 0,
+      date: `${draft.data.date}T00:00:00`,
+      type: draft.data.type,
+      designation: draft.data.designation,
+      quantite: draft.data.quantite,
+      prix_unitaire: draft.data.prix_unitaire,
+      categorie_id: draft.data.categorie_id,
+    }
+
+    sessionStorage.removeItem(TRANSACTION_FORM_DRAFT_KEY)
+    this.clearResumeQueryParams()
+  }
+
+  private readDraft(): TransactionFormDraft | null {
+    const rawDraft = sessionStorage.getItem(TRANSACTION_FORM_DRAFT_KEY)
+
+    if (!rawDraft) {
+      return null
+    }
+
+    try {
+      return JSON.parse(rawDraft) as TransactionFormDraft
+    } catch {
+      sessionStorage.removeItem(TRANSACTION_FORM_DRAFT_KEY)
+      return null
+    }
+  }
+
+  private clearResumeQueryParams(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        resumeTransaction: null,
+        returnTo: null,
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    })
+  }
+
+  private getCurrentPath(): string {
+    return this.router.url.split('?')[0]
   }
 }

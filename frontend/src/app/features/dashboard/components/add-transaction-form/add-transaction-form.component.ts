@@ -4,6 +4,22 @@ import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { TransactionService, Category, Transaction } from '../../../../core/services/transaction.service'
 
+interface TransactionFormDraft {
+  returnTo: string
+  mode: 'new' | 'edit'
+  transactionId: number | null
+  data: {
+    type: 'recette' | 'depense'
+    designation: string
+    quantite: number
+    prix_unitaire: number
+    categorie_id: number
+    date: string
+  }
+}
+
+const TRANSACTION_FORM_DRAFT_KEY = 'transaction-form-draft'
+
 @Component({
   selector: 'app-add-transaction-form',
   standalone: true,
@@ -12,7 +28,7 @@ import { TransactionService, Category, Transaction } from '../../../../core/serv
 })
 export class AddTransactionFormComponent implements OnInit, OnChanges {
   @Output() success = new EventEmitter<void>()
-  @Output() cancel = new EventEmitter<void>()
+  @Output() formCancel = new EventEmitter<void>()
   @Input() editingTransaction: Transaction | null = null
 
   type: 'recette' | 'depense' = 'recette'
@@ -27,13 +43,12 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
   private lastEditingId: number | null = null
 
   constructor(
-    private transactionService: TransactionService,
-    private router: Router
+    private readonly transactionService: TransactionService,
+    private readonly router: Router
   ) {}
 
-  async ngOnInit(): Promise<void> {
-    await this.loadCategories()
-    this.applyEditingTransactionIfNeeded(true)
+  ngOnInit(): void {
+    void this.initialize()
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -81,7 +96,29 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
   }
 
   goToCategories(): void {
-    this.router.navigate(['/dashboard/categories'])
+    const currentPath = this.getCurrentPath()
+    const draft: TransactionFormDraft = {
+      returnTo: currentPath,
+      mode: this.editingTransaction ? 'edit' : 'new',
+      transactionId: this.editingTransaction?.id ?? null,
+      data: {
+        type: this.type,
+        designation: this.designation,
+        quantite: this.quantite,
+        prix_unitaire: this.prix_unitaire,
+        categorie_id: this.categorie_id,
+        date: this.date,
+      },
+    }
+
+    sessionStorage.setItem(TRANSACTION_FORM_DRAFT_KEY, JSON.stringify(draft))
+
+    this.router.navigate(['/dashboard/categories'], {
+      queryParams: {
+        returnTo: currentPath,
+        resumeTransaction: draft.mode,
+      },
+    })
   }
 
   async onSubmit(): Promise<void> {
@@ -115,7 +152,7 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
       this.success.emit()
 
       if (this.editingTransaction) {
-        this.cancel.emit()
+        this.formCancel.emit()
       }
     } catch (err: any) {
       this.error = err?.message || 'Erreur lors de la création'
@@ -126,7 +163,13 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
 
   onCancel(): void {
     this.resetForm()
-    this.cancel.emit()
+    this.formCancel.emit()
+  }
+
+  private async initialize(): Promise<void> {
+    await this.loadCategories()
+    this.applyEditingTransactionIfNeeded(true)
+    this.restoreDraftIfNeeded()
   }
 
   private resetForm(): void {
@@ -138,5 +181,44 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
     this.type = 'recette'
     this.error = ''
     this.lastEditingId = null
+  }
+
+  private restoreDraftIfNeeded(): void {
+    if (this.editingTransaction) {
+      return
+    }
+
+    const draft = this.readDraft()
+    if (draft?.mode !== 'new' || draft.returnTo !== this.getCurrentPath()) {
+      return
+    }
+
+    this.type = draft.data.type
+    this.designation = draft.data.designation
+    this.quantite = draft.data.quantite
+    this.prix_unitaire = draft.data.prix_unitaire
+    this.categorie_id = draft.data.categorie_id
+    this.date = draft.data.date
+
+    sessionStorage.removeItem(TRANSACTION_FORM_DRAFT_KEY)
+  }
+
+  private readDraft(): TransactionFormDraft | null {
+    const rawDraft = sessionStorage.getItem(TRANSACTION_FORM_DRAFT_KEY)
+
+    if (!rawDraft) {
+      return null
+    }
+
+    try {
+      return JSON.parse(rawDraft) as TransactionFormDraft
+    } catch {
+      sessionStorage.removeItem(TRANSACTION_FORM_DRAFT_KEY)
+      return null
+    }
+  }
+
+  private getCurrentPath(): string {
+    return this.router.url.split('?')[0]
   }
 }

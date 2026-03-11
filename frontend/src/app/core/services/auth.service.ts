@@ -106,12 +106,10 @@ export class AuthService {
   async refreshAccessToken(): Promise<string | null> {
     const refreshToken = this.getRefreshToken()
     if (!refreshToken) {
-      console.warn('⚠️ Aucun refresh token disponible')
       return null
     }
 
     try {
-      console.log('🔄 Tentative de rafraîchissement du token...')
       const response = await this.http
         .post<{ accessToken: string; refreshToken: string }>(`${environment.apiBaseUrl}/auth/refresh`, {
           refreshToken,
@@ -128,7 +126,6 @@ export class AuthService {
         localStorage.setItem('refreshToken', response.refreshToken)
       }
 
-      console.log('✅ Token rafraîchi avec succès')
       return response.accessToken
     } catch (error) {
       console.error('❌ Erreur lors du rafraîchissement du token:', error)
@@ -139,19 +136,15 @@ export class AuthService {
   async ensureValidAccessToken(): Promise<string | null> {
     const accessToken = this.getAccessToken()
     if (!accessToken) {
-      console.warn('⚠️ Aucun access token trouvé')
       return null
     }
 
     if (!this.isTokenExpired(accessToken)) {
-      console.log('✅ Access token valide')
       return accessToken
     }
 
-    console.warn('⚠️ Access token expiré, tentative de rafraîchissement...')
     const newAccessToken = await this.refreshAccessToken()
     if (newAccessToken) {
-      console.log('✅ Token rafraîchi avec succès')
       return newAccessToken
     }
 

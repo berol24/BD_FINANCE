@@ -18,12 +18,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return from(authService.ensureValidAccessToken()).pipe(
     switchMap((token) => {
       if (!token) {
-        console.warn('⚠️ Pas de token valide, redirection vers login')
         router.navigate(['/auth/login'])
         return next(req)
       }
 
-      console.debug('✅ Token ajouté à la requête')
       const authenticatedRequest = req.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`,

@@ -14,8 +14,16 @@
       <h1 class="text-3xl font-black text-slate-900">Mes catégories</h1>
       <p class="text-slate-600 mt-2">Ajoutez, modifiez et supprimez vos catégories personnelles.</p>
 
+      <div *ngIf="isTransactionReturnFlow" class="mt-4 p-3 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 font-semibold">
+        Vous êtes venu depuis un formulaire de transaction. Après création, vous serez renvoyé automatiquement pour continuer votre saisie.
+      </div>
+
       <div *ngIf="error" class="mt-4 p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 font-semibold">
         {{ error }}
+      </div>
+
+      <div *ngIf="successMessage" class="mt-4 p-3 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 font-semibold">
+        {{ successMessage }}
       </div>
 
       <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -81,6 +89,8 @@
               *ngIf="editingCategoryId === category.id"
               type="text"
               [(ngModel)]="editingCategoryName"
+              placeholder="Nom de la catégorie"
+              title="Nom de la catégorie"
               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
