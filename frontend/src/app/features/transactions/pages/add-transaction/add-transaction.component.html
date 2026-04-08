@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 sm:p-8">
+<div class="min-h-screen bg-slate-50 p-4 sm:p-8">
   <div class="max-w-2xl mx-auto">
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">
@@ -7,7 +7,7 @@
       </h1>
       <button
         (click)="goBack()"
-        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
+        class="px-4 py-2 bg-slate-300 text-slate-700 rounded-lg hover:bg-slate-400 transition"
       >
         ← Retour
       </button>
@@ -16,7 +16,7 @@
     <!-- Error Message -->
     <div
       *ngIf="error"
-      class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg border border-red-300"
+      class="mb-4 p-4 bg-slate-100 text-slate-700 rounded-lg border border-slate-300"
     >
       {{ error }}
     </div>
@@ -38,7 +38,7 @@
             min="0"
             placeholder="0.00"
             title="Montant"
-            class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none transition"
+            class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-emerald-500 focus:outline-none transition"
           />
         </div>
 
@@ -53,7 +53,7 @@
               [(ngModel)]="categoryId"
               name="categoryId"
               title="Catégorie"
-              class="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none transition"
+              class="flex-1 px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-emerald-500 focus:outline-none transition"
             >
               <option value="" disabled>-- Sélectionner une catégorie --</option>
               <option *ngFor="let cat of categories" [value]="cat.id">
@@ -82,7 +82,7 @@
             placeholder="Ajouter une note..."
             title="Description"
             rows="4"
-            class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none transition resize-none"
+            class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-emerald-500 focus:outline-none transition resize-none"
           ></textarea>
         </div>
 
@@ -94,8 +94,8 @@
             [class.opacity-50]="loading"
             [class.cursor-not-allowed]="loading"
             [ngClass]="{
-              'bg-green-500 hover:bg-green-600': type === 'recette',
-              'bg-red-500 hover:bg-red-600': type === 'depense',
+              'bg-emerald-600 hover:bg-emerald-700': type === 'recette',
+              'bg-slate-700 hover:bg-slate-800': type === 'depense',
             }"
             class="flex-1 px-6 py-3 text-white font-semibold rounded-lg transition disabled:hover:bg-current"
           >
@@ -104,7 +104,7 @@
           <button
             type="button"
             (click)="goBack()"
-            class="flex-1 px-6 py-3 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition"
+            class="flex-1 px-6 py-3 bg-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-400 transition"
           >
             Annuler
           </button>

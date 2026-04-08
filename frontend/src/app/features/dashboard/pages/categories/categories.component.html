@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+<div class="min-h-screen bg-slate-50">
   <div class="max-w-4xl mx-auto px-4 py-8 space-y-6">
     <button
       (click)="goBack()"
@@ -14,11 +14,11 @@
       <h1 class="text-3xl font-black text-slate-900">Mes catégories</h1>
       <p class="text-slate-600 mt-2">Ajoutez, modifiez et supprimez vos catégories personnelles.</p>
 
-      <div *ngIf="isTransactionReturnFlow" class="mt-4 p-3 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 font-semibold">
+      <div *ngIf="isTransactionReturnFlow" class="mt-4 p-3 rounded-lg border border-slate-200 bg-slate-100 text-slate-700 font-semibold">
         Vous êtes venu depuis un formulaire de transaction. Après création, vous serez renvoyé automatiquement pour continuer votre saisie.
       </div>
 
-      <div *ngIf="error" class="mt-4 p-3 rounded-lg border border-red-200 bg-red-50 text-red-700 font-semibold">
+      <div *ngIf="error" class="mt-4 p-3 rounded-lg border border-slate-300 bg-slate-100 text-slate-700 font-semibold">
         {{ error }}
       </div>
 
@@ -42,7 +42,7 @@
         </button>
       </div>
 
-      <div *ngIf="newCategoryName.trim() && !canCreateCategory" class="mt-2 text-sm font-semibold text-amber-700">
+      <div *ngIf="newCategoryName.trim() && !canCreateCategory" class="mt-2 text-sm font-semibold text-slate-700">
         Cette catégorie existe déjà.
       </div>
 
@@ -66,7 +66,7 @@
           type="text"
           [(ngModel)]="searchTerm"
           placeholder="Filtrer"
-          class="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          class="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
         />
       </div>
 
@@ -91,7 +91,7 @@
               [(ngModel)]="editingCategoryName"
               placeholder="Nom de la catégorie"
               title="Nom de la catégorie"
-              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
 
@@ -99,7 +99,7 @@
             <button
               *ngIf="editingCategoryId !== category.id"
               (click)="startEdit(category)"
-              class="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold rounded-lg"
+              class="px-3 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-semibold rounded-lg"
             >
               Modifier
             </button>
@@ -120,15 +120,50 @@
             </button>
             <button
               *ngIf="editingCategoryId !== category.id"
-              (click)="deleteCategory(category.id)"
+              (click)="askDeleteCategory(category)"
               [disabled]="saving"
-              class="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg disabled:opacity-50"
+              class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg disabled:opacity-50"
             >
               Supprimer
             </button>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="categoryToDelete" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <button
+    type="button"
+    class="absolute inset-0 bg-black/45 backdrop-blur-sm"
+    (click)="cancelDeleteCategory()"
+    aria-label="Fermer la confirmation de suppression"
+  ></button>
+
+  <div class="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6">
+    <h3 class="text-xl font-extrabold text-slate-900">Supprimer la catégorie ?</h3>
+    <p class="mt-2 text-slate-600">
+      Voulez-vous vraiment supprimer <span class="font-semibold text-slate-900">"{{ categoryToDelete.nom }}"</span> ?
+    </p>
+    <p class="mt-1 text-sm text-slate-500">Cette action est irréversible.</p>
+
+    <div class="mt-6 flex items-center justify-end gap-3">
+      <button
+        type="button"
+        (click)="cancelDeleteCategory()"
+        class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-colors"
+      >
+        Annuler
+      </button>
+      <button
+        type="button"
+        (click)="confirmDeleteCategory()"
+        [disabled]="saving"
+        class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors disabled:opacity-50"
+      >
+        Supprimer
+      </button>
     </div>
   </div>
 </div>

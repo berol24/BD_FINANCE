@@ -33,7 +33,7 @@ export class TransactionTableComponent {
   }
 
   getAmountClass(transaction: Transaction): string {
-    return transaction.type === 'depense' ? 'text-red-600' : 'text-emerald-600'
+    return transaction.type === 'depense' ? 'text-slate-700' : 'text-emerald-600'
   }
 
   onDelete(transactionId: number): void {

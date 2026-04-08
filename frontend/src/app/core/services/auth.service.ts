@@ -61,15 +61,7 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     const accessToken = this.getAccessToken()
-    if (!accessToken) {
-      return false
-    }
-
-    if (!this.isTokenExpired(accessToken)) {
-      return true
-    }
-
-    return !!this.getRefreshToken()
+    return !!accessToken && !this.isTokenExpired(accessToken)
   }
 
   getAccessToken(): string | null {
@@ -143,12 +135,7 @@ export class AuthService {
       return accessToken
     }
 
-    const newAccessToken = await this.refreshAccessToken()
-    if (newAccessToken) {
-      return newAccessToken
-    }
-
-    console.error('❌ Échec du rafraîchissement du token, déconnexion')
+    console.warn('⚠️ Access token expiré, déconnexion automatique')
     this.logout()
     return null
   }

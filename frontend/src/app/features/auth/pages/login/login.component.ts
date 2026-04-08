@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { Router, RouterLink } from '@angular/router'
 import { AuthService } from '../../../../core/services/auth.service'
+import { I18nPipe } from '../../../../core/pipes/i18n.pipe'
+import { I18nService } from '../../../../core/services/i18n.service'
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, I18nPipe],
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
 })
@@ -20,12 +22,13 @@ export class LoginComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private i18nService: I18nService
   ) {}
 
   async login(): Promise<void> {
     if (!this.email || !this.password) {
-      this.error = 'Veuillez remplir tous les champs'
+      this.error = this.i18nService.t('auth.fillAllFields')
       return
     }
 
@@ -36,7 +39,7 @@ export class LoginComponent {
       await this.authService.login(this.email, this.password)
       this.router.navigate(['/dashboard'])
     } catch (err: any) {
-      this.error = err.error?.message || 'Erreur de connexion'
+      this.error = err.error?.message || this.i18nService.t('auth.loginError')
     } finally {
       this.loading = false
     }

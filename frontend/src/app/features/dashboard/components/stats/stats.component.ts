@@ -15,10 +15,10 @@ export class StatsComponent {
 
   get bgClass(): string {
     const colors: Record<string, string> = {
-      success: 'bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/20',
-      danger: 'bg-gradient-to-br from-red-500 to-red-600 shadow-lg shadow-red-500/20',
-      warning: 'bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-500/20',
-      primary: 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/20',
+      success: 'bg-emerald-600 shadow-lg shadow-emerald-900/20',
+      danger: 'bg-slate-700 shadow-lg shadow-slate-900/20',
+      warning: 'bg-slate-600 shadow-lg shadow-slate-900/20',
+      primary: 'bg-slate-700 shadow-lg shadow-slate-900/20',
     }
     return colors[this.color]
   }

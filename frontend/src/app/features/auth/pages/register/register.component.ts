@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { Router, RouterLink } from '@angular/router'
 import { AuthService } from '../../../../core/services/auth.service'
+import { I18nPipe } from '../../../../core/pipes/i18n.pipe'
+import { I18nService } from '../../../../core/services/i18n.service'
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, I18nPipe],
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss'],
 })
@@ -24,17 +26,18 @@ export class RegisterComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private i18nService: I18nService
   ) {}
 
   async register(): Promise<void> {
     if (!this.nom || !this.prenom || !this.email || !this.password || !this.confirmPassword) {
-      this.error = 'Veuillez remplir tous les champs'
+      this.error = this.i18nService.t('auth.fillAllFields')
       return
     }
 
     if (this.password !== this.confirmPassword) {
-      this.error = 'Les mots de passe ne correspondent pas'
+      this.error = this.i18nService.t('auth.passwordMismatch')
       return
     }
 
@@ -45,7 +48,7 @@ export class RegisterComponent {
       await this.authService.register(this.nom, this.prenom, this.email, this.password, this.confirmPassword)
       this.router.navigate(['/auth/login'])
     } catch (err: any) {
-      this.error = err.error?.message || 'Erreur lors de l\'inscription'
+      this.error = err.error?.message || this.i18nService.t('auth.registerError')
     } finally {
       this.loading = false
     }

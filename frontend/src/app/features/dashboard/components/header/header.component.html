@@ -1,10 +1,8 @@
-<header class="sticky top-0 z-50 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl border-b border-slate-700">
-  <div class="w-full px-2 sm:px-4 lg:px-8 py-2.5 sm:py-6 max-[360px]:px-1.5">
-    <!-- Mobile: Logo + Install button on one line -->
-    <div class="flex flex-row justify-between items-center gap-2 mb-3 sm:mb-0">
-      <!-- Logo & Branding -->
-      <div class="flex items-center gap-2 min-w-0">
-        <div class="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-blue-500 shadow-lg flex-shrink-0">
+<header class="sticky top-0 z-50 bg-slate-900/95 backdrop-blur text-white shadow-xl border-b border-slate-700">
+  <div class="w-full max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4 max-[360px]:px-2">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-600 shadow-md flex-shrink-0">
           <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="2" y="6" width="20" height="12" rx="2" />
             <circle cx="12" cy="12" r="3" />
@@ -12,16 +10,15 @@
           </svg>
         </div>
         <div class="min-w-0">
-          <h1 class="text-base sm:text-2xl lg:text-3xl font-black bg-gradient-to-r from-emerald-400 to-blue-400 bg-clip-text text-transparent truncate max-[360px]:text-sm">BD Finance</h1>
-          <p class="text-xs sm:text-sm text-slate-400 font-medium hidden sm:block">Gestion intelligente</p>
+          <h1 class="text-lg sm:text-2xl font-black text-white truncate max-[360px]:text-base">BD Finance</h1>
+          <p class="text-xs text-slate-400 font-medium hidden md:block">{{ 'analytics' | i18n }}</p>
         </div>
       </div>
 
-      <!-- Mobile Install Button - PRIORITY on small screens -->
       <button
         *ngIf="canInstall"
         (click)="onInstall()"
-        class="px-2 sm:px-4 py-2 bg-black hover:bg-gray-800 text-white font-bold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-xs sm:text-sm whitespace-nowrap inline-flex items-center gap-1 sm:gap-2 animate-pulse flex-shrink-0"
+        class="sm:hidden px-2.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors text-xs whitespace-nowrap inline-flex items-center gap-1.5 flex-shrink-0"
         title="Installer l'application"
       >
         <svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -30,18 +27,15 @@
           <path d="M12 16v4" />
           <path d="M12 12l-3 3h6z" />
         </svg>
-        <span class="hidden sm:inline">Installer</span>
+        {{ 'install.title' | i18n }}
       </button>
     </div>
 
-    <!-- Desktop: Full nav bar (hidden on mobile) -->
-    <div class="hidden sm:flex items-center gap-2 lg:gap-4 justify-between">
-      <!-- Buttons grid -->
-      <div class="flex items-center gap-2 lg:gap-4 flex-wrap">
-        <!-- Categories Button -->
+    <div class="mt-3 sm:mt-4 flex items-center gap-2 justify-between flex-wrap">
+      <div class="hidden sm:flex items-center gap-2">
         <button
           (click)="goToCategories()"
-          class="px-3 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-sm whitespace-nowrap"
+          class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors text-sm whitespace-nowrap"
           title="Gérer les catégories"
         >
           <span class="inline-flex items-center gap-2">
@@ -51,27 +45,36 @@
               <rect x="14" y="14" width="7" height="7" />
               <rect x="3" y="14" width="7" height="7" />
             </svg>
-            <span>Catégories</span>
+            <span>{{ 'category' | i18n }}</span>
           </span>
         </button>
 
-        <!-- User Profile Button -->
         <button
           (click)="goToProfile()"
-          class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-700/50 transition-all duration-200"
-          title="Profil"
+          class="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
+          title="{{ 'profile.title' | i18n }}"
         >
-          <div class="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-blue-500 text-white font-bold text-xs shadow-lg flex-shrink-0">
+          <div class="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-600 text-white font-bold text-xs shadow-lg flex-shrink-0">
             {{ getAvatarInitials() }}
           </div>
           <span class="text-sm font-semibold text-slate-200">{{ user?.prenom }} {{ user?.nom }}</span>
         </button>
+      </div>
 
-        <!-- Language Selector -->
+      <div class="hidden sm:flex items-center gap-2">
+        <button
+          *ngIf="canInstall"
+          (click)="onInstall()"
+          class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors text-sm"
+          title="Installer l'application"
+        >
+          {{ 'install.title' | i18n }}
+        </button>
+
         <div class="relative">
           <button
             (click)="showLanguageMenu = !showLanguageMenu"
-            class="px-3 py-2 bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 text-white font-semibold rounded-lg transition-all duration-200 text-sm flex items-center gap-2"
+            class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors text-sm flex items-center gap-2"
             title="Changer la langue"
           >
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -99,28 +102,9 @@
           </div>
         </div>
 
-        <!-- Share Button -->
-        <button
-          (click)="onShare()"
-          class="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-sm whitespace-nowrap"
-          title="Partager l'application"
-        >
-          <span class="inline-flex items-center gap-2">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="18" cy="5" r="3" />
-              <circle cx="6" cy="12" r="3" />
-              <circle cx="18" cy="19" r="3" />
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-            </svg>
-            <span>Partager</span>
-          </span>
-        </button>
-
-        <!-- Logout Button -->
         <button
           (click)="onLogout()"
-          class="px-3 py-2 bg-gradient-to-r from-red-500/20 to-red-600/20 hover:from-red-500/40 hover:to-red-600/40 text-red-300 hover:text-red-200 font-semibold rounded-lg transition-all duration-200 border border-red-500/30 hover:border-red-500/60 text-sm whitespace-nowrap"
+          class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors border border-slate-600 text-sm whitespace-nowrap"
         >
           <span class="inline-flex items-center gap-2">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -128,69 +112,31 @@
               <path d="M16 17l5-5-5-5" />
               <path d="M21 12H9" />
             </svg>
-            <span>Déconnexion</span>
+            <span>{{ 'logout' | i18n }}</span>
           </span>
         </button>
       </div>
-    </div>
 
-    <!-- Mobile bottom menu (hidden on desktop, shown on mobile after logo) -->
-    <div class="sm:hidden grid grid-cols-5 gap-1 mt-3 max-[360px]:gap-0.5">
-      <button
-        (click)="goToCategories()"
-        class="px-2 py-1.5 max-[360px]:px-1 max-[360px]:py-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all duration-200 text-xs whitespace-nowrap active:scale-95"
-        title="Catégories"
-      >
-        <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="3" width="7" height="7" />
-          <rect x="14" y="3" width="7" height="7" />
-          <rect x="14" y="14" width="7" height="7" />
-          <rect x="3" y="14" width="7" height="7" />
-        </svg>
-      </button>
-
-      <button
-        (click)="goToProfile()"
-        class="px-2 py-1.5 max-[360px]:px-1 max-[360px]:py-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition-all duration-200 text-xs whitespace-nowrap active:scale-95"
-        title="Profil"
-      >
-        <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="8" r="4" />
-          <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
-        </svg>
-      </button>
-
-      <button
-        (click)="onShare()"
-        class="px-2 py-1.5 max-[360px]:px-1 max-[360px]:py-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all duration-200 text-xs whitespace-nowrap active:scale-95"
-        title="Partager"
-      >
-        <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="18" cy="5" r="3" />
-          <circle cx="6" cy="12" r="3" />
-          <circle cx="18" cy="19" r="3" />
-          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-        </svg>
-      </button>
-
-      <button
-        (click)="onLogout()"
-        class="px-2 py-1.5 max-[360px]:px-1 max-[360px]:py-1 bg-red-500/20 hover:bg-red-500/40 text-red-300 hover:text-red-200 font-semibold rounded-lg transition-all duration-200 border border-red-500/30 text-xs whitespace-nowrap active:scale-95"
-        title="Déconnexion"
-      >
-        <svg class="w-4 h-4 inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-          <path d="M16 17l5-5-5-5" />
-          <path d="M21 12H9" />
-        </svg>
-      </button>
-
-      <!-- Language picker (mobile) -->
-      <div class="relative">
+      <div class="sm:hidden flex items-center gap-2 w-full">
+        <button
+          (click)="goToCategories()"
+          class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-xs"
+          title="Catégories"
+        >
+          {{ 'category' | i18n }}
+        </button>
+        <button
+          (click)="goToProfile()"
+          class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg text-xs"
+          title="Profil"
+        >
+          {{ 'profile.title' | i18n }}
+        </button>
+        <div class="relative ml-auto">
+          <!-- Language picker (mobile) -->
         <button
           (click)="showLanguageMenu = !showLanguageMenu"
-          class="w-full px-2 py-1.5 max-[360px]:px-1 max-[360px]:py-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition-all duration-200 text-xs flex items-center gap-1 justify-center whitespace-nowrap active:scale-95"
+          class="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors text-xs"
           title="Langue"
         >
           {{ currentLanguage.toUpperCase() }}
@@ -211,6 +157,14 @@
             🇬🇧 English
           </button>
         </div>
+        </div>
+        <button
+          (click)="onLogout()"
+          class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg border border-slate-600 text-xs"
+          title="Déconnexion"
+        >
+          {{ 'logout' | i18n }}
+        </button>
       </div>
     </div>
   </div>

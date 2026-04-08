@@ -10,14 +10,14 @@ import { PwaService } from './core/services/pwa.service'
     <!-- PWA Install Banner - Top of page -->
     <div
       *ngIf="canInstall && showBanner"
-      class="fixed top-0 left-0 right-0 z-[1000] bg-gradient-to-r from-emerald-500 via-emerald-600 to-cyan-600 shadow-2xl animate-in slide-in-from-top duration-300"
+      class="fixed top-0 left-0 right-0 z-[1000] bg-slate-900 shadow-2xl animate-in slide-in-from-top duration-300"
     >
       <div class="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-4">
         <!-- Left: Icon + Text -->
         <div class="flex items-center gap-2 sm:gap-3 flex-1">
-          <div class="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/20 backdrop-blur-sm shadow-lg flex-shrink-0">
+          <div class="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-600/30 backdrop-blur-sm shadow-lg flex-shrink-0">
             <svg
-              class="w-5 h-5 sm:w-6 sm:h-6 text-white animate-bounce"
+              class="w-5 h-5 sm:w-6 sm:h-6 text-white"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -34,7 +34,7 @@ import { PwaService } from './core/services/pwa.service'
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="text-white font-bold text-xs sm:text-sm">Installer BD Finance</h3>
-            <p class="text-emerald-100 text-xs hidden sm:block">Accédez à votre app en un clic depuis l'écran d'accueil</p>
+            <p class="text-slate-300 text-xs hidden sm:block">Accédez à votre app en un clic depuis l'écran d'accueil</p>
           </div>
         </div>
 
@@ -42,14 +42,14 @@ import { PwaService } from './core/services/pwa.service'
         <div class="flex items-center gap-2 flex-shrink-0">
           <button
             (click)="onInstall()"
-            class="px-3 sm:px-6 py-2 bg-white hover:bg-emerald-50 text-emerald-600 hover:text-emerald-700 font-bold rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg text-xs sm:text-sm whitespace-nowrap"
+            class="px-3 sm:px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors shadow-lg text-xs sm:text-sm whitespace-nowrap"
             title="Installer l'application sur votre appareil"
           >
             Installer
           </button>
           <button
             (click)="dismissBanner()"
-            class="px-2 sm:px-3 py-2 hover:bg-white/10 rounded-lg transition-all duration-200 text-white hover:text-emerald-100"
+            class="px-2 sm:px-3 py-2 hover:bg-white/10 rounded-lg transition-all duration-200 text-white"
             title="Fermer"
           >
             <svg

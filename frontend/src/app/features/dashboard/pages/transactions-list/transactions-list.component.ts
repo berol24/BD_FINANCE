@@ -566,7 +566,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   }
 
   getAmountClass(amount: number): string {
-    return amount >= 0 ? 'text-emerald-600' : 'text-red-600'
+    return amount >= 0 ? 'text-emerald-600' : 'text-slate-700'
   }
 
   private restoreTransactionDraftIfNeeded(): void {

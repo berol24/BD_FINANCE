@@ -22,6 +22,7 @@ export class CategoriesComponent implements OnInit {
   editingCategoryId: number | null = null
   editingCategoryName = ''
   saving = false
+  categoryToDelete: Category | null = null
   private returnTo: string | null = null
   private resumeTransaction: 'new' | 'edit' | null = null
 
@@ -160,15 +161,26 @@ export class CategoriesComponent implements OnInit {
     }
   }
 
-  async deleteCategory(categoryId: number): Promise<void> {
-    if (!confirm('Voulez-vous vraiment supprimer cette categorie ?')) {
+  askDeleteCategory(category: Category): void {
+    if (this.saving) return
+    this.categoryToDelete = category
+  }
+
+  cancelDeleteCategory(): void {
+    this.categoryToDelete = null
+  }
+
+  async confirmDeleteCategory(): Promise<void> {
+    if (!this.categoryToDelete) {
       return
     }
 
+    const categoryId = this.categoryToDelete.id
     try {
       this.saving = true
       this.error = ''
       await this.transactionService.deleteCategory(categoryId)
+      this.categoryToDelete = null
       await this.loadCategories()
     } catch (err: any) {
       this.error = err?.error?.message || 'Erreur lors de la suppression de la categorie'

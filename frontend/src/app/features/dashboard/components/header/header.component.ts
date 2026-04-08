@@ -4,11 +4,12 @@ import { Router } from '@angular/router'
 import { User } from '../../../../core/services/auth.service'
 import { PwaService } from '../../../../core/services/pwa.service'
 import { I18nService } from '../../../../core/services/i18n.service'
+import { I18nPipe } from '../../../../core/pipes/i18n.pipe'
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, I18nPipe],
   templateUrl: './header.component.html',
 })
 export class HeaderComponent implements OnInit {

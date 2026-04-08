@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+<div class="min-h-screen bg-slate-50">
   <app-header [user]="user" (logout)="logout()"></app-header>
 
   <main class="max-w-7xl mx-auto px-3 sm:px-4 py-5 sm:py-8 pb-24 sm:pb-8 max-[360px]:px-2 max-[360px]:py-4">
@@ -33,15 +33,15 @@
       </section>
 
       <!-- Message d'erreur si aucune transaction -->
-      <div *ngIf="transactions.length === 0" class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+      <div *ngIf="transactions.length === 0" class="bg-slate-100 border border-slate-200 rounded-xl p-4">
         <div class="flex">
           <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+            <svg class="h-5 w-5 text-slate-500" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
             </svg>
           </div>
           <div class="ml-3">
-            <p class="text-sm text-amber-700">
+            <p class="text-sm text-slate-700">
               Aucune transaction trouvée. Cliquez sur "Nouvelle Transaction" pour commencer.
             </p>
           </div>
@@ -49,7 +49,7 @@
       </div>
 
       <!-- Modal Nouvelle Transaction -->
-      <div *ngIf="showNewTransactionModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <div *ngIf="showNewTransactionModal" class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
         <button
           type="button"
           class="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -57,16 +57,16 @@
           aria-label="Fermer la fenêtre de nouvelle transaction"
           title="Fermer"
         ></button>
-        <div class="relative w-full max-w-2xl mx-2 sm:mx-4 max-h-screen overflow-y-auto">
-          <div class="bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-2xl p-4 sm:p-8 border border-slate-200/50">
+        <div class="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto">
+          <div class="relative bg-white rounded-2xl border border-slate-200 shadow-xl pt-10 sm:pt-12">
             <!-- Close Button -->
             <button
               (click)="closeNewTransactionModal()"
-              class="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-700 transition-colors"
+              class="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 hover:text-slate-900 transition-colors"
               aria-label="Fermer"
               title="Fermer"
             >
-              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -80,7 +80,7 @@
       </div>
 
       <!-- Edit Transaction Modal -->
-      <div *ngIf="editingTransaction" class="fixed inset-0 z-50 flex items-center justify-center">
+      <div *ngIf="editingTransaction" class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
         <button
           type="button"
           class="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -88,16 +88,16 @@
           aria-label="Fermer la fenêtre de modification"
           title="Fermer"
         ></button>
-        <div class="relative w-full max-w-2xl mx-2 sm:mx-4 max-h-screen overflow-y-auto">
-          <div class="bg-gradient-to-br from-white to-slate-50 rounded-2xl shadow-2xl p-4 sm:p-8 border border-slate-200/50">
+        <div class="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto">
+          <div class="relative bg-white rounded-2xl border border-slate-200 shadow-xl pt-10 sm:pt-12">
             <!-- Close Button -->
             <button
               (click)="onEditCancel()"
-              class="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-700 transition-colors"
+              class="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 border border-slate-300 text-slate-700 hover:bg-slate-200 hover:text-slate-900 transition-colors"
               aria-label="Fermer"
               title="Fermer"
             >
-              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -125,10 +125,10 @@
           icon="trend-down"
           color="danger"
         ></app-stats>
-        <div class="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl p-4 sm:p-6 flex flex-col justify-between">
-          <p class="text-sm font-semibold text-blue-100 uppercase tracking-wider">Solde actuel</p>
+        <div class="rounded-2xl border border-slate-300 bg-slate-800 text-white shadow-xl p-4 sm:p-6 flex flex-col justify-between">
+          <p class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Solde actuel</p>
           <p class="text-3xl sm:text-4xl font-black mt-2">{{ solde | number: '1.2-2' }} €</p>
-          <p class="text-sm text-blue-100 mt-2">Mis à jour selon vos dernières transactions</p>
+          <p class="text-sm text-slate-300 mt-2">Mis à jour selon vos dernières transactions</p>
         </div>
       </div>
 
