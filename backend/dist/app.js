@@ -5,17 +5,15 @@ import routes from './routes/index.js';
 import { swaggerSpec } from './config/swagger.js';
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 // CORS middleware FIRST
 app.use((req, res, next) => {
     const corsOrigin = process.env.CORS_ORIGIN;
     const allowedOrigins = new Set([
         'http://localhost:4200',
         'http://localhost:3000',
-        'http://localhost:3001',
         'http://127.0.0.1:4200',
         'http://127.0.0.1:3000',
-        'http://127.0.0.1:3001',
         'https://bd-finance.pages.dev',
         'https://bd-finance-tbr7.onrender.com',
         ...(corsOrigin ? [corsOrigin] : []),
