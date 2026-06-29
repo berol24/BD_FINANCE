@@ -47,18 +47,27 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   Math = Math
 
   // Charts
-  @ViewChild('donutCanvas', { static: false }) donutCanvas?: ElementRef
-  @ViewChild('barCanvas', { static: false }) barCanvas?: ElementRef
+  @ViewChild('donutCanvas') set donutCanvasRef(ref: ElementRef<HTMLCanvasElement> | undefined) {
+    this.donutCanvas = ref
+    if (ref) this.scheduleChartUpdate()
+  }
+  @ViewChild('barCanvas') set barCanvasRef(ref: ElementRef<HTMLCanvasElement> | undefined) {
+    this.barCanvas = ref
+    if (ref) this.scheduleChartUpdate()
+  }
+  private donutCanvas?: ElementRef<HTMLCanvasElement>
+  private barCanvas?: ElementRef<HTMLCanvasElement>
   donutChart?: Chart
   barChart?: Chart
   categoriesAmount: CategoryAmount[] = []
-  chartsInitialized = false
+  private chartUpdateTimer?: ReturnType<typeof setTimeout>
 
   // Filtres
   searchTerm = ''
   selectedCategory = '0'
   startDate = ''
   endDate = ''
+  selectedMonthKey = ''
   sortBy: 'date' | 'price' | 'name' = 'date'
   sortOrder: 'asc' | 'desc' = 'desc'
 
@@ -108,14 +117,18 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    // Utiliser requestAnimationFrame pour attendre le prochain rendu avant de dessiner les graphiques
-    // Cela évite les blocages et est plus efficace qu'un setTimeout
-    requestAnimationFrame(() => {
-      if (!this.chartsInitialized && this.filteredTransactions.length > 0 && this.donutCanvas && this.barCanvas) {
+    this.scheduleChartUpdate()
+  }
+
+  private scheduleChartUpdate(): void {
+    if (this.chartUpdateTimer) {
+      clearTimeout(this.chartUpdateTimer)
+    }
+    this.chartUpdateTimer = setTimeout(() => {
+      if (!this.loading) {
         this.updateCharts()
-        this.chartsInitialized = true
       }
-    })
+    }, 50)
   }
 
   async loadData(): Promise<void> {
@@ -143,10 +156,15 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
       console.error('Erreur lors du chargement des données:', error)
     } finally {
       this.loading = false
+      this.scheduleChartUpdate()
     }
   }
 
-  applyFilters(): void {
+  applyFilters(syncMonthDates = true): void {
+    if (syncMonthDates) {
+      this.applyMonthDates()
+    }
+
     let filtered = [...this.allTransactions]
 
     // Recherche
@@ -210,15 +228,53 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
 
     this.filteredTransactions = filtered
     this.currentPage = 1
-    this.updateCharts()
+    this.scheduleChartUpdate()
+  }
+
+  get availableMonths(): { key: string; label: string }[] {
+    const keys = new Set<string>()
+    this.allTransactions.forEach((t) => {
+      const date = new Date(t.date)
+      if (!Number.isNaN(date.getTime())) {
+        keys.add(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`)
+      }
+    })
+    return Array.from(keys)
+      .sort((a, b) => a.localeCompare(b))
+      .map((key) => ({
+        key,
+        label: new Date(`${key}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+      }))
+  }
+
+  selectMonth(key: string): void {
+    if (this.selectedMonthKey === key) {
+      this.selectedMonthKey = ''
+      this.startDate = ''
+      this.endDate = ''
+    } else {
+      this.selectedMonthKey = key
+      const [year, month] = key.split('-')
+      const lastDay = new Date(Number(year), Number(month), 0).getDate()
+      this.startDate = `${key}-01`
+      this.endDate = `${key}-${String(lastDay).padStart(2, '0')}`
+    }
+    this.applyFilters(false)
+  }
+
+  private applyMonthDates(): void {
+    if (!this.selectedMonthKey) return
+    const [year, month] = this.selectedMonthKey.split('-')
+    const lastDay = new Date(Number(year), Number(month), 0).getDate()
+    this.startDate = `${this.selectedMonthKey}-01`
+    this.endDate = `${this.selectedMonthKey}-${String(lastDay).padStart(2, '0')}`
   }
 
   updateCharts(): void {
-    // Ne mettre à jour que si les canvas existent (ngAfterViewInit a été appelé)
-    if (!this.donutCanvas || !this.barCanvas) {
+    if (!this.donutCanvas?.nativeElement || !this.barCanvas?.nativeElement) {
       return
     }
-    
+
     this.categoriesAmount = this.calculateCategoriesAmount()
     this.updateDonutChart()
     this.updateLineChart()
@@ -253,54 +309,85 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   updateDonutChart(): void {
     if (!this.donutCanvas) return
 
-    const labels = this.categoriesAmount.map((c) => c.nom)
-    const data = this.categoriesAmount.map((c) => Math.abs(c.montant))
-    const colors = this.categoriesAmount.map((c) => c.couleur)
-
-    // Détruire le graphique existant
     if (this.donutChart) {
       this.donutChart.destroy()
     }
 
     const ctx = this.donutCanvas.nativeElement.getContext('2d')
+    if (!ctx) return
+
+    if (this.categoriesAmount.length > 0) {
+      const labels = this.categoriesAmount.map((c) => c.nom)
+      const data = this.categoriesAmount.map((c) => Math.abs(c.montant))
+      const colors = this.categoriesAmount.map((c) => c.couleur)
+
+      this.donutChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [
+            {
+              data,
+              backgroundColor: colors,
+              borderColor: '#ffffff',
+              borderWidth: 2,
+            },
+          ],
+        },
+        options: this.getDonutOptions(),
+      })
+      return
+    }
+
+    let recettes = 0
+    let depenses = 0
+    this.filteredTransactions.forEach((t) => {
+      if (t.type === 'recette') recettes += this.getAbsoluteAmount(t)
+      else depenses += this.getAbsoluteAmount(t)
+    })
+
     this.donutChart = new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels,
+        labels: ['Recettes', 'Dépenses'],
         datasets: [
           {
-            data,
-            backgroundColor: colors,
+            data: [recettes, depenses],
+            backgroundColor: ['#10b981', '#ef4444'],
             borderColor: '#ffffff',
             borderWidth: 2,
           },
         ],
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: {
-            position: 'right',
-            labels: {
-              font: { size: 13, weight: 'bold' as any },
-              color: '#1f2937',
-              padding: 15,
-              usePointStyle: true,
-            },
+      options: this.getDonutOptions(),
+    })
+  }
+
+  private getDonutOptions(): Chart['options'] {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            font: { size: 13, weight: 'bold' as const },
+            color: '#1f2937',
+            padding: 15,
+            usePointStyle: true,
           },
-          tooltip: {
-            callbacks: {
-              label: (context: any) => {
-                const label = context.label || ''
-                const value = context.parsed || 0
-                return `${label}: ${value.toFixed(2)} €`
-              },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const label = context.label || ''
+              const value = context.parsed || 0
+              return `${label}: ${value.toFixed(2)} €`
             },
           },
         },
       },
-    })
+    }
   }
 
   resetFilters(): void {
@@ -308,9 +395,9 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     this.selectedCategory = '0'
     this.startDate = ''
     this.endDate = ''
+    this.selectedMonthKey = ''
     this.sortBy = 'date'
     this.sortOrder = 'desc'
-    this.chartsInitialized = false  // Réinitialiser pour permettre une mise à jour des graphiques
     this.applyFilters()
   }
 
@@ -437,9 +524,27 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   }
 
   getMonthlyData(): any[] {
+    return this.buildMonthlyData(this.filteredTransactions)
+  }
+
+  getBarChartMonthlyData(): any[] {
+    let source = [...this.allTransactions]
+
+    if (this.searchTerm) {
+      source = source.filter((t) => t.designation.toLowerCase().includes(this.searchTerm.toLowerCase()))
+    }
+
+    if (this.selectedCategory !== '0') {
+      source = source.filter((t) => t.categorie_id === Number.parseInt(this.selectedCategory, 10))
+    }
+
+    return this.buildMonthlyData(source)
+  }
+
+  private buildMonthlyData(transactions: Transaction[]): any[] {
     const monthlyMap = new Map<string, { recettes: number; depenses: number }>()
 
-    this.filteredTransactions.forEach((t) => {
+    transactions.forEach((t) => {
       const date = new Date(t.date)
       const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
       const amount = this.getAbsoluteAmount(t)
@@ -463,70 +568,71 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
         label: new Date(month + '-01').toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }),
         recettes: data.recettes,
         depenses: data.depenses,
-        solde: data.recettes - data.depenses
+        solde: data.recettes - data.depenses,
       }))
   }
 
   updateLineChart(): void {
     if (!this.barCanvas) return
 
-    const monthlyData = this.getMonthlyData()
+    const monthlyData = this.getBarChartMonthlyData()
     const labels = monthlyData.map((d) => d.label)
     const recettesData = monthlyData.map((d) => d.recettes)
     const depensesData = monthlyData.map((d) => d.depenses)
+    const selectedIndex = monthlyData.findIndex((d) => d.month === this.selectedMonthKey)
 
-    // Détruire le graphique existant
     if (this.barChart) {
       this.barChart.destroy()
     }
 
     const ctx = this.barCanvas.nativeElement.getContext('2d')
+    if (!ctx) return
+
     this.barChart = new Chart(ctx, {
-      type: 'line',
+      type: 'bar',
       data: {
         labels,
         datasets: [
           {
             label: 'Recettes',
             data: recettesData,
+            backgroundColor: monthlyData.map((_, i) =>
+              i === selectedIndex ? 'rgba(16, 185, 129, 0.95)' : 'rgba(16, 185, 129, 0.55)'
+            ),
             borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            borderWidth: 3,
-            tension: 0.4,
-            fill: true,
-            pointRadius: 5,
-            pointBackgroundColor: '#10b981',
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2,
+            borderWidth: 1,
+            borderRadius: 6,
           },
           {
             label: 'Dépenses',
             data: depensesData,
+            backgroundColor: monthlyData.map((_, i) =>
+              i === selectedIndex ? 'rgba(239, 68, 68, 0.95)' : 'rgba(239, 68, 68, 0.55)'
+            ),
             borderColor: '#ef4444',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            borderWidth: 3,
-            tension: 0.4,
-            fill: true,
-            pointRadius: 5,
-            pointBackgroundColor: '#ef4444',
-            pointBorderColor: '#ffffff',
-            pointBorderWidth: 2,
+            borderWidth: 1,
+            borderRadius: 6,
           },
         ],
       },
       options: {
         responsive: true,
-        maintainAspectRatio: true,
-        interaction: {
-          mode: 'index' as const,
-          intersect: false,
+        maintainAspectRatio: false,
+        onClick: (_event, elements) => {
+          if (elements.length > 0) {
+            const index = elements[0].index
+            const month = monthlyData[index]
+            if (month) {
+              this.selectMonth(month.month)
+            }
+          }
         },
         plugins: {
           legend: {
             display: true,
             position: 'top',
             labels: {
-              font: { size: 13, weight: 'bold' as any },
+              font: { size: 13, weight: 'bold' as const },
               color: '#1f2937',
               padding: 15,
               usePointStyle: true,
@@ -535,12 +641,8 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
           tooltip: {
             backgroundColor: 'rgba(0, 0, 0, 0.8)',
             padding: 12,
-            titleFont: { size: 13, weight: 'bold' as any },
-            bodyFont: { size: 12 },
             callbacks: {
-              label: (context: any) => {
-                return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} €`
-              },
+              label: (context) => `${context.dataset.label}: ${(context.parsed.y ?? 0).toFixed(2)} €`,
             },
           },
         },
@@ -548,9 +650,11 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
           y: {
             beginAtZero: true,
             ticks: {
-              callback: (value: any) => `${value.toFixed(0)} €`,
+              callback: (value) => `${value} €`,
             },
+            grid: { color: 'rgba(148, 163, 184, 0.2)' },
           },
+          x: { grid: { display: false } },
         },
       },
     })

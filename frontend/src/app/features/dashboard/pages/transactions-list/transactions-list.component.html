@@ -201,22 +201,58 @@
         </div>
       </div>
 
+      <!-- Month Selector -->
+      <div *ngIf="availableMonths.length > 0" class="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-slate-200">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Filtrer par mois</h2>
+            <p class="text-sm text-slate-500 mt-1">Cliquez sur un mois pour filtrer les données et graphiques</p>
+          </div>
+          <button
+            *ngIf="selectedMonthKey"
+            (click)="selectMonth(selectedMonthKey)"
+            class="px-3 py-2 text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors font-semibold w-fit"
+          >
+            Tous les mois
+          </button>
+        </div>
+        <div class="flex gap-2 overflow-x-auto pb-1">
+          <button
+            *ngFor="let month of availableMonths"
+            type="button"
+            (click)="selectMonth(month.key)"
+            [class.bg-emerald-600]="selectedMonthKey === month.key"
+            [class.text-white]="selectedMonthKey === month.key"
+            [class.shadow-md]="selectedMonthKey === month.key"
+            [class.bg-slate-50]="selectedMonthKey !== month.key"
+            [class.text-slate-700]="selectedMonthKey !== month.key"
+            [class.border-slate-200]="selectedMonthKey !== month.key"
+            class="flex-shrink-0 px-4 py-2.5 rounded-xl border font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] capitalize"
+          >
+            {{ month.label }}
+          </button>
+        </div>
+      </div>
+
       <!-- Charts Section -->
-      <div *ngIf="categoriesAmount.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Donut Chart -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div class="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
-          <h3 class="text-xl font-bold text-slate-900 mb-6">Répartition par catégorie</h3>
-          <div class="relative h-80">
+          <h3 class="text-xl font-bold text-slate-900 mb-2">Répartition par catégorie</h3>
+          <p class="text-sm text-slate-500 mb-6" *ngIf="selectedMonthKey">Filtre mois actif</p>
+          <div class="relative h-80" [class.hidden]="filteredTransactions.length === 0">
             <canvas #donutCanvas></canvas>
           </div>
+          <p *ngIf="filteredTransactions.length === 0" class="text-center text-sm text-slate-500 py-16">Aucune transaction à afficher</p>
+          <p *ngIf="filteredTransactions.length > 0 && categoriesAmount.length === 0" class="text-center text-sm text-slate-500 mt-4">Répartition recettes / dépenses</p>
         </div>
 
-        <!-- Monthly Line Chart -->
         <div class="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
-          <h3 class="text-xl font-bold text-slate-900 mb-6">Évolution mensuelle des transactions</h3>
-          <div class="relative h-80">
+          <h3 class="text-xl font-bold text-slate-900 mb-2">Évolution mensuelle</h3>
+          <p class="text-sm text-slate-500 mb-6">Cliquez sur une barre pour filtrer par mois</p>
+          <div class="relative h-80" [class.hidden]="filteredTransactions.length === 0">
             <canvas #barCanvas></canvas>
           </div>
+          <p *ngIf="filteredTransactions.length === 0" class="text-center text-sm text-slate-500 py-16">Aucune transaction à afficher</p>
         </div>
       </div>
 
