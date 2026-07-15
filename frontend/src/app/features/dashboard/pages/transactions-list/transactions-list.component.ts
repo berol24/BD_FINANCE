@@ -1,7 +1,8 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core'
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
+import { Subscription } from 'rxjs'
 import { AuthService, User } from '../../../../core/services/auth.service'
 import { TransactionService, Category, Transaction } from '../../../../core/services/transaction.service'
 import { PdfService } from '../../../../core/services/pdf.service'
@@ -29,7 +30,24 @@ interface TransactionFormDraft {
   }
 }
 
+interface MonthOption {
+  key: string
+  label: string
+}
+
+interface MonthlyBarData {
+  month: string
+  label: string
+  recettes: number
+  depenses: number
+  solde: number
+}
+
 const TRANSACTION_FORM_DRAFT_KEY = 'transaction-form-draft'
+const CATEGORY_COLORS = [
+  '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6',
+  '#ec4899', '#06b6d4', '#f97316', '#6366f1', '#14b8a6',
+]
 
 @Component({
   selector: 'app-transactions-list',
@@ -38,7 +56,7 @@ const TRANSACTION_FORM_DRAFT_KEY = 'transaction-form-draft'
   templateUrl: './transactions-list.component.html',
   styleUrls: ['./transactions-list.component.scss'],
 })
-export class TransactionsListComponent implements OnInit, AfterViewInit {
+export class TransactionsListComponent implements OnInit, AfterViewInit, OnDestroy {
   user: User | null = null
   categories: Category[] = []
   allTransactions: Transaction[] = []
@@ -46,23 +64,30 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   loading = true
   Math = Math
 
-  // Charts
+  totalAmount = 0
+  availableMonths: MonthOption[] = []
+  categoriesAmount: CategoryAmount[] = []
+  paginationPages: { page?: number; isEllipsis: boolean }[] = []
+
+  private categoryById = new Map<number, Category>()
+  private routeSub?: Subscription
+  private searchDebounceTimer?: ReturnType<typeof setTimeout>
+  private chartUpdateTimer?: ReturnType<typeof setTimeout>
+  private destroyed = false
+
   @ViewChild('donutCanvas') set donutCanvasRef(ref: ElementRef<HTMLCanvasElement> | undefined) {
     this.donutCanvas = ref
-    if (ref) this.scheduleChartUpdate()
+    if (ref && !this.loading) this.scheduleChartUpdate()
   }
   @ViewChild('barCanvas') set barCanvasRef(ref: ElementRef<HTMLCanvasElement> | undefined) {
     this.barCanvas = ref
-    if (ref) this.scheduleChartUpdate()
+    if (ref && !this.loading) this.scheduleChartUpdate()
   }
   private donutCanvas?: ElementRef<HTMLCanvasElement>
   private barCanvas?: ElementRef<HTMLCanvasElement>
   donutChart?: Chart
   barChart?: Chart
-  categoriesAmount: CategoryAmount[] = []
-  private chartUpdateTimer?: ReturnType<typeof setTimeout>
 
-  // Filtres
   searchTerm = ''
   selectedCategory = '0'
   startDate = ''
@@ -71,23 +96,14 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   sortBy: 'date' | 'price' | 'name' = 'date'
   sortOrder: 'asc' | 'desc' = 'desc'
 
-  // Type de transaction
   transactionType: 'recette' | 'depense' | 'all' = 'recette'
   pageTitle = ''
   editingTransaction: Transaction | null = null
 
-  // Pagination
   itemsPerPage = 10
   currentPage = 1
-
-  get paginatedTransactions(): Transaction[] {
-    const start = (this.currentPage - 1) * this.itemsPerPage
-    return this.filteredTransactions.slice(start, start + this.itemsPerPage)
-  }
-
-  get totalPages(): number {
-    return Math.ceil(this.filteredTransactions.length / this.itemsPerPage)
-  }
+  paginatedTransactions: Transaction[] = []
+  totalPages = 0
 
   constructor(
     private readonly authService: AuthService,
@@ -98,7 +114,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   ) {}
 
   ngOnInit(): void {
-    this.route.url.subscribe((url) => {
+    this.routeSub = this.route.url.subscribe((url) => {
       const path = url[0]?.path || ''
       if (path === 'recettes') {
         this.transactionType = 'recette'
@@ -107,12 +123,11 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
         this.transactionType = 'depense'
         this.pageTitle = 'Mes Dépenses'
       } else {
-        // Afficher les deux types ensemble (transactions)
-        this.transactionType = 'all' as any
+        this.transactionType = 'all'
         this.pageTitle = 'Toutes les Transactions'
       }
       this.restoreTransactionDraftIfNeeded()
-      this.loadData()
+      void this.loadData()
     })
   }
 
@@ -120,15 +135,34 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     this.scheduleChartUpdate()
   }
 
+  ngOnDestroy(): void {
+    this.destroyed = true
+    this.routeSub?.unsubscribe()
+    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer)
+    if (this.chartUpdateTimer) clearTimeout(this.chartUpdateTimer)
+    this.donutChart?.destroy()
+    this.barChart?.destroy()
+  }
+
+  trackByTransactionId(_index: number, transaction: Transaction): number {
+    return transaction.id
+  }
+
+  trackByCategoryId(_index: number, cat: { id: number }): number {
+    return cat.id
+  }
+
+  trackByMonthKey(_index: number, month: MonthOption): string {
+    return month.key
+  }
+
   private scheduleChartUpdate(): void {
-    if (this.chartUpdateTimer) {
-      clearTimeout(this.chartUpdateTimer)
-    }
+    if (this.chartUpdateTimer) clearTimeout(this.chartUpdateTimer)
     this.chartUpdateTimer = setTimeout(() => {
-      if (!this.loading) {
+      if (!this.loading && !this.destroyed) {
         this.updateCharts()
       }
-    }, 50)
+    }, 120)
   }
 
   async loadData(): Promise<void> {
@@ -136,22 +170,23 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
       this.loading = true
       this.user = this.authService.getCurrentUser()
 
-      const categoriesRes = await this.transactionService.getCategories()
+      const typeParam = this.transactionType === 'all' ? undefined : this.transactionType
+      const [categoriesRes, transactionsRes] = await Promise.all([
+        this.transactionService.getCategories(),
+        this.transactionService.getTransactions(typeParam),
+      ])
+
       this.categories = categoriesRes.data || []
+      this.categoryById = new Map(this.categories.map((c) => [Number(c.id), c]))
 
-      const transactionsRes = await this.transactionService.getTransactions()
-      this.allTransactions = transactionsRes.data || []
+      const raw = (transactionsRes.data || []) as Transaction[]
+      this.allTransactions =
+        this.transactionType === 'all'
+          ? raw.filter((t) => t.type === 'recette' || t.type === 'depense')
+          : raw.filter((t) => t.type === this.transactionType)
 
-      // Filtrer par type
-      if (this.transactionType === 'all') {
-        // Afficher tous les types
-        this.allTransactions = this.allTransactions.filter((t) => t.type === 'recette' || t.type === 'depense')
-      } else {
-        // Filtrer par type spécifique
-        this.allTransactions = this.allTransactions.filter((t) => t.type === this.transactionType)
-      }
-
-      this.applyFilters()
+      this.rebuildAvailableMonths()
+      this.applyFilters(false)
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error)
     } finally {
@@ -160,90 +195,111 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     }
   }
 
+  onSearchChange(): void {
+    if (this.searchDebounceTimer) clearTimeout(this.searchDebounceTimer)
+    this.searchDebounceTimer = setTimeout(() => this.applyFilters(false), 200)
+  }
+
+  onCategoryChange(): void {
+    this.applyFilters(false)
+  }
+
+  onDateChange(): void {
+    this.selectedMonthKey = ''
+    this.applyFilters(false)
+  }
+
+  onItemsPerPageChange(): void {
+    this.itemsPerPage = Number(this.itemsPerPage) || 10
+    this.currentPage = 1
+    this.updatePagination()
+  }
+
   applyFilters(syncMonthDates = true): void {
-    if (syncMonthDates) {
+    if (syncMonthDates && this.selectedMonthKey) {
       this.applyMonthDates()
     }
 
-    let filtered = [...this.allTransactions]
+    const search = this.searchTerm.trim().toLowerCase()
+    const categoryId = this.selectedCategory !== '0' ? Number.parseInt(this.selectedCategory, 10) : null
+    const startMs = this.startDate ? this.parseLocalDateStart(this.startDate) : null
+    const endMs = this.endDate ? this.parseLocalDateEnd(this.endDate) : null
 
-    // Recherche
-    if (this.searchTerm) {
-      filtered = filtered.filter((t) => t.designation.toLowerCase().includes(this.searchTerm.toLowerCase()))
-    }
-
-    // Catégorie
-    if (this.selectedCategory !== '0') {
-      filtered = filtered.filter((t) => t.categorie_id === Number.parseInt(this.selectedCategory, 10))
-    }
-
-    // Dates
-    if (this.startDate) {
-      filtered = filtered.filter((t) => new Date(t.date) >= new Date(this.startDate))
-    }
-    if (this.endDate) {
-      const endDateObj = new Date(this.endDate)
-      endDateObj.setHours(23, 59, 59, 999)
-      filtered = filtered.filter((t) => new Date(t.date) <= endDateObj)
-    }
-
-    // Tri
-    filtered.sort((a, b) => {
-      let aVal: any
-      let bVal: any
-
-      if (this.sortBy === 'date') {
-        aVal = new Date(a.date).getTime()
-        bVal = new Date(b.date).getTime()
-      } else if (this.sortBy === 'price') {
-        aVal = this.getSignedAmount(a)
-        bVal = this.getSignedAmount(b)
-      } else {
-        aVal = a.designation.toLowerCase()
-        bVal = b.designation.toLowerCase()
+    let filtered = this.allTransactions.filter((t) => {
+      if (search) {
+        const designation = (t.designation || '').toLowerCase()
+        if (!designation.includes(search)) return false
       }
 
-      if (this.sortOrder === 'asc') {
-        if (aVal > bVal) {
-          return 1
-        }
-
-        if (aVal < bVal) {
-          return -1
-        }
-
-        return 0
+      if (categoryId !== null && Number(t.categorie_id) !== categoryId) {
+        return false
       }
 
-      if (aVal < bVal) {
-        return 1
+      if (startMs !== null || endMs !== null) {
+        const txMs = this.parseTransactionDateMs(t.date)
+        if (Number.isNaN(txMs)) return false
+        if (startMs !== null && txMs < startMs) return false
+        if (endMs !== null && txMs > endMs) return false
       }
 
-      if (aVal > bVal) {
-        return -1
-      }
-
-      return 0
+      return true
     })
 
+    filtered = this.sortTransactions(filtered)
+
     this.filteredTransactions = filtered
+    this.totalAmount = filtered.reduce((sum, t) => sum + this.getSignedAmount(t), 0)
+    this.categoriesAmount = this.calculateCategoriesAmount()
     this.currentPage = 1
+    this.updatePagination()
     this.scheduleChartUpdate()
   }
 
-  get availableMonths(): { key: string; label: string }[] {
-    const keys = new Set<string>()
-    this.allTransactions.forEach((t) => {
-      const date = new Date(t.date)
-      if (!Number.isNaN(date.getTime())) {
-        keys.add(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`)
+  private sortTransactions(transactions: Transaction[]): Transaction[] {
+    const sorted = [...transactions]
+    const order = this.sortOrder === 'asc' ? 1 : -1
+
+    sorted.sort((a, b) => {
+      let cmp = 0
+      if (this.sortBy === 'date') {
+        cmp = this.parseTransactionDateMs(a.date) - this.parseTransactionDateMs(b.date)
+      } else if (this.sortBy === 'price') {
+        cmp = this.getSignedAmount(a) - this.getSignedAmount(b)
+      } else {
+        cmp = (a.designation || '').localeCompare(b.designation || '', 'fr', { sensitivity: 'base' })
       }
+      return cmp * order
     })
-    return Array.from(keys)
+
+    return sorted
+  }
+
+  private updatePagination(): void {
+    const perPage = Number(this.itemsPerPage) || 10
+    this.itemsPerPage = perPage
+    this.totalPages = Math.max(1, Math.ceil(this.filteredTransactions.length / perPage))
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = this.totalPages
+    }
+    const start = (this.currentPage - 1) * perPage
+    this.paginatedTransactions = this.filteredTransactions.slice(start, start + perPage)
+    this.paginationPages = this.buildPaginationPages()
+  }
+
+  private rebuildAvailableMonths(): void {
+    const keys = new Set<string>()
+    for (const t of this.allTransactions) {
+      const key = this.getMonthKey(t.date)
+      if (key) keys.add(key)
+    }
+    this.availableMonths = Array.from(keys)
       .sort((a, b) => a.localeCompare(b))
       .map((key) => ({
         key,
-        label: new Date(`${key}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+        label: new Date(Number(key.slice(0, 4)), Number(key.slice(5, 7)) - 1, 1).toLocaleDateString('fr-FR', {
+          month: 'long',
+          year: 'numeric',
+        }),
       }))
   }
 
@@ -254,18 +310,15 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
       this.endDate = ''
     } else {
       this.selectedMonthKey = key
-      const [year, month] = key.split('-')
-      const lastDay = new Date(Number(year), Number(month), 0).getDate()
-      this.startDate = `${key}-01`
-      this.endDate = `${key}-${String(lastDay).padStart(2, '0')}`
+      this.applyMonthDates()
     }
     this.applyFilters(false)
   }
 
   private applyMonthDates(): void {
     if (!this.selectedMonthKey) return
-    const [year, month] = this.selectedMonthKey.split('-')
-    const lastDay = new Date(Number(year), Number(month), 0).getDate()
+    const [year, month] = this.selectedMonthKey.split('-').map(Number)
+    const lastDay = new Date(year, month, 0).getDate()
     this.startDate = `${this.selectedMonthKey}-01`
     this.endDate = `${this.selectedMonthKey}-${String(lastDay).padStart(2, '0')}`
   }
@@ -274,86 +327,74 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     if (!this.donutCanvas?.nativeElement || !this.barCanvas?.nativeElement) {
       return
     }
-
-    this.categoriesAmount = this.calculateCategoriesAmount()
     this.updateDonutChart()
-    this.updateLineChart()
+    this.updateBarChart()
   }
 
   calculateCategoriesAmount(): CategoryAmount[] {
     const categoryMap = new Map<number, { nom: string; montant: number; id: number }>()
-    const colors = [
-      '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6',
-      '#ec4899', '#06b6d4', '#f97316', '#6366f1', '#14b8a6'
-    ]
 
-    this.filteredTransactions.forEach((t) => {
-      const cat = this.categories.find((c) => c.id === t.categorie_id)
-      if (cat) {
-        if (!categoryMap.has(cat.id)) {
-          categoryMap.set(cat.id, { nom: cat.nom, montant: 0, id: cat.id })
-        }
-        const item = categoryMap.get(cat.id)!
-        item.montant += this.getSignedAmount(t)
+    for (const t of this.filteredTransactions) {
+      const catId = Number(t.categorie_id)
+      const cat = this.categoryById.get(catId)
+      if (!cat) continue
+
+      if (!categoryMap.has(catId)) {
+        categoryMap.set(catId, { nom: cat.nom, montant: 0, id: catId })
       }
-    })
+      categoryMap.get(catId)!.montant += this.getSignedAmount(t)
+    }
 
     return Array.from(categoryMap.values())
       .map((item, index) => ({
         ...item,
-        couleur: colors[index % colors.length],
+        couleur: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
       }))
-      .sort((a, b) => b.montant - a.montant)
+      .sort((a, b) => Math.abs(b.montant) - Math.abs(a.montant))
   }
 
   updateDonutChart(): void {
     if (!this.donutCanvas) return
 
-    if (this.donutChart) {
-      this.donutChart.destroy()
-    }
-
     const ctx = this.donutCanvas.nativeElement.getContext('2d')
     if (!ctx) return
 
-    if (this.categoriesAmount.length > 0) {
-      const labels = this.categoriesAmount.map((c) => c.nom)
-      const data = this.categoriesAmount.map((c) => Math.abs(c.montant))
-      const colors = this.categoriesAmount.map((c) => c.couleur)
+    let labels: string[]
+    let data: number[]
+    let colors: string[]
 
-      this.donutChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels,
-          datasets: [
-            {
-              data,
-              backgroundColor: colors,
-              borderColor: '#ffffff',
-              borderWidth: 2,
-            },
-          ],
-        },
-        options: this.getDonutOptions(),
-      })
-      return
+    if (this.categoriesAmount.length > 0) {
+      labels = this.categoriesAmount.map((c) => c.nom)
+      data = this.categoriesAmount.map((c) => Math.abs(c.montant))
+      colors = this.categoriesAmount.map((c) => c.couleur)
+    } else {
+      let recettes = 0
+      let depenses = 0
+      for (const t of this.filteredTransactions) {
+        if (t.type === 'recette') recettes += this.getAbsoluteAmount(t)
+        else depenses += this.getAbsoluteAmount(t)
+      }
+      labels = ['Recettes', 'Dépenses']
+      data = [recettes, depenses]
+      colors = ['#10b981', '#ef4444']
     }
 
-    let recettes = 0
-    let depenses = 0
-    this.filteredTransactions.forEach((t) => {
-      if (t.type === 'recette') recettes += this.getAbsoluteAmount(t)
-      else depenses += this.getAbsoluteAmount(t)
-    })
+    if (this.donutChart) {
+      this.donutChart.data.labels = labels
+      this.donutChart.data.datasets[0].data = data
+      this.donutChart.data.datasets[0].backgroundColor = colors
+      this.donutChart.update('none')
+      return
+    }
 
     this.donutChart = new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: ['Recettes', 'Dépenses'],
+        labels,
         datasets: [
           {
-            data: [recettes, depenses],
-            backgroundColor: ['#10b981', '#ef4444'],
+            data,
+            backgroundColor: colors,
             borderColor: '#ffffff',
             borderWidth: 2,
           },
@@ -367,6 +408,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     return {
       responsive: true,
       maintainAspectRatio: false,
+      animation: false,
       plugins: {
         legend: {
           position: 'right',
@@ -398,7 +440,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     this.selectedMonthKey = ''
     this.sortBy = 'date'
     this.sortOrder = 'desc'
-    this.applyFilters()
+    this.applyFilters(false)
   }
 
   toggleSort(field: 'date' | 'price' | 'name'): void {
@@ -408,27 +450,17 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
       this.sortBy = field
       this.sortOrder = 'desc'
     }
-    this.applyFilters()
-  }
-
-  getFilteredCategories(): Category[] {
-    return this.categories
+    this.applyFilters(false)
   }
 
   downloadPdf(): void {
-    // Calculer les vrais totaux recettes et dépenses
     let totalRecettes = 0
     let totalDepenses = 0
 
-    this.filteredTransactions.forEach((t) => {
-      if (t.type === 'recette') {
-        totalRecettes += this.getAbsoluteAmount(t)
-      } else if (t.type === 'depense') {
-        totalDepenses += this.getAbsoluteAmount(t)
-      }
-    })
-
-    const solde = totalRecettes - totalDepenses
+    for (const t of this.filteredTransactions) {
+      if (t.type === 'recette') totalRecettes += this.getAbsoluteAmount(t)
+      else if (t.type === 'depense') totalDepenses += this.getAbsoluteAmount(t)
+    }
 
     this.pdfService.generateSimplePdfReport(
       `${this.user?.prenom} ${this.user?.nom}`,
@@ -438,7 +470,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
       this.filteredTransactions,
       totalRecettes,
       totalDepenses,
-      solde,
+      totalRecettes - totalDepenses,
       this.categoriesAmount
     )
   }
@@ -450,6 +482,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++
+      this.updatePagination()
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
@@ -457,6 +490,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--
+      this.updatePagination()
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
@@ -466,7 +500,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
   }
 
   getCategoryName(categoryId: number): string {
-    return this.categories.find((c) => c.id === categoryId)?.nom || '-'
+    return this.categoryById.get(Number(categoryId))?.nom || '-'
   }
 
   getTransactionSign(transaction: Transaction): string {
@@ -477,8 +511,8 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     return this.getSignedAmount(transaction) >= 0
   }
 
-  getPaginationPages(): any[] {
-    const pages: any[] = []
+  private buildPaginationPages(): { page?: number; isEllipsis: boolean }[] {
+    const pages: { page?: number; isEllipsis: boolean }[] = []
     for (let i = 1; i <= this.totalPages; i++) {
       if (i <= 5 || Math.abs(i - this.currentPage) <= 1 || i > this.totalPages - 2) {
         pages.push({ page: i, isEllipsis: false })
@@ -491,26 +525,22 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
 
   goToPage(page: number): void {
     this.currentPage = page
+    this.updatePagination()
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  getTotalAmount(): number {
-    return this.filteredTransactions.reduce((sum, t) => sum + this.getSignedAmount(t), 0)
-  }
-
   async deleteTransaction(transactionId: number): Promise<void> {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette transaction ?')) {
-      try {
-        await this.transactionService.deleteTransaction(transactionId)
-        await this.loadData()
-      } catch (error) {
-        console.error('Erreur lors de la suppression:', error)
-        alert('Erreur lors de la suppression')
-      }
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette transaction ?')) return
+    try {
+      await this.transactionService.deleteTransaction(transactionId)
+      await this.loadData()
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error)
+      alert('Erreur lors de la suppression')
     }
   }
 
-  async editTransaction(transaction: Transaction): Promise<void> {
+  editTransaction(transaction: Transaction): void {
     this.editingTransaction = transaction
   }
 
@@ -523,56 +553,54 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     this.editingTransaction = null
   }
 
-  getMonthlyData(): any[] {
-    return this.buildMonthlyData(this.filteredTransactions)
-  }
+  private getBarChartMonthlyData(): MonthlyBarData[] {
+    let source = this.allTransactions
 
-  getBarChartMonthlyData(): any[] {
-    let source = [...this.allTransactions]
-
-    if (this.searchTerm) {
-      source = source.filter((t) => t.designation.toLowerCase().includes(this.searchTerm.toLowerCase()))
+    const search = this.searchTerm.trim().toLowerCase()
+    if (search) {
+      source = source.filter((t) => (t.designation || '').toLowerCase().includes(search))
     }
 
     if (this.selectedCategory !== '0') {
-      source = source.filter((t) => t.categorie_id === Number.parseInt(this.selectedCategory, 10))
+      const categoryId = Number.parseInt(this.selectedCategory, 10)
+      source = source.filter((t) => Number(t.categorie_id) === categoryId)
     }
 
     return this.buildMonthlyData(source)
   }
 
-  private buildMonthlyData(transactions: Transaction[]): any[] {
+  private buildMonthlyData(transactions: Transaction[]): MonthlyBarData[] {
     const monthlyMap = new Map<string, { recettes: number; depenses: number }>()
 
-    transactions.forEach((t) => {
-      const date = new Date(t.date)
-      const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-      const amount = this.getAbsoluteAmount(t)
+    for (const t of transactions) {
+      const month = this.getMonthKey(t.date)
+      if (!month) continue
 
+      const amount = this.getAbsoluteAmount(t)
       if (!monthlyMap.has(month)) {
         monthlyMap.set(month, { recettes: 0, depenses: 0 })
       }
 
       const item = monthlyMap.get(month)!
-      if (t.type === 'recette') {
-        item.recettes += amount
-      } else {
-        item.depenses += amount
-      }
-    })
+      if (t.type === 'recette') item.recettes += amount
+      else item.depenses += amount
+    }
 
     return Array.from(monthlyMap.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([month, data]) => ({
-        month,
-        label: new Date(month + '-01').toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }),
-        recettes: data.recettes,
-        depenses: data.depenses,
-        solde: data.recettes - data.depenses,
-      }))
+      .map(([month, data]) => {
+        const [year, mon] = month.split('-').map(Number)
+        return {
+          month,
+          label: new Date(year, mon - 1, 1).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }),
+          recettes: data.recettes,
+          depenses: data.depenses,
+          solde: data.recettes - data.depenses,
+        }
+      })
   }
 
-  updateLineChart(): void {
+  updateBarChart(): void {
     if (!this.barCanvas) return
 
     const monthlyData = this.getBarChartMonthlyData()
@@ -581,12 +609,26 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
     const depensesData = monthlyData.map((d) => d.depenses)
     const selectedIndex = monthlyData.findIndex((d) => d.month === this.selectedMonthKey)
 
-    if (this.barChart) {
-      this.barChart.destroy()
-    }
+    const recettesColors = monthlyData.map((_, i) =>
+      i === selectedIndex ? 'rgba(16, 185, 129, 0.95)' : 'rgba(16, 185, 129, 0.55)'
+    )
+    const depensesColors = monthlyData.map((_, i) =>
+      i === selectedIndex ? 'rgba(239, 68, 68, 0.95)' : 'rgba(239, 68, 68, 0.55)'
+    )
 
     const ctx = this.barCanvas.nativeElement.getContext('2d')
     if (!ctx) return
+
+    if (this.barChart) {
+      this.barChart.data.labels = labels
+      this.barChart.data.datasets[0].data = recettesData
+      this.barChart.data.datasets[0].backgroundColor = recettesColors
+      this.barChart.data.datasets[1].data = depensesData
+      this.barChart.data.datasets[1].backgroundColor = depensesColors
+      ;(this.barChart.options as any)._monthlyData = monthlyData
+      this.barChart.update('none')
+      return
+    }
 
     this.barChart = new Chart(ctx, {
       type: 'bar',
@@ -596,9 +638,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
           {
             label: 'Recettes',
             data: recettesData,
-            backgroundColor: monthlyData.map((_, i) =>
-              i === selectedIndex ? 'rgba(16, 185, 129, 0.95)' : 'rgba(16, 185, 129, 0.55)'
-            ),
+            backgroundColor: recettesColors,
             borderColor: '#10b981',
             borderWidth: 1,
             borderRadius: 6,
@@ -606,9 +646,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
           {
             label: 'Dépenses',
             data: depensesData,
-            backgroundColor: monthlyData.map((_, i) =>
-              i === selectedIndex ? 'rgba(239, 68, 68, 0.95)' : 'rgba(239, 68, 68, 0.55)'
-            ),
+            backgroundColor: depensesColors,
             borderColor: '#ef4444',
             borderWidth: 1,
             borderRadius: 6,
@@ -618,14 +656,13 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         onClick: (_event, elements) => {
-          if (elements.length > 0) {
-            const index = elements[0].index
-            const month = monthlyData[index]
-            if (month) {
-              this.selectMonth(month.month)
-            }
-          }
+          if (elements.length === 0) return
+          const chart = this.barChart
+          const data = (chart?.options as any)?._monthlyData as MonthlyBarData[] | undefined
+          const month = data?.[elements[0].index]
+          if (month) this.selectMonth(month.month)
         },
         plugins: {
           legend: {
@@ -658,10 +695,11 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
         },
       },
     })
+    ;(this.barChart.options as any)._monthlyData = monthlyData
   }
 
   getAbsoluteAmount(transaction: Transaction): number {
-    return Math.abs(transaction.quantite * transaction.prix_unitaire)
+    return Math.abs(Number(transaction.quantite) * Number(transaction.prix_unitaire))
   }
 
   getSignedAmount(transaction: Transaction): number {
@@ -671,6 +709,44 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
 
   getAmountClass(amount: number): string {
     return amount >= 0 ? 'text-emerald-600' : 'text-slate-700'
+  }
+
+  getCategoryPercent(montant: number): number {
+    if (this.totalAmount === 0) return 0
+    return (montant / this.totalAmount) * 100
+  }
+
+  /** Parse YYYY-MM-DD as local midnight to avoid UTC timezone shifts. */
+  private parseLocalDateStart(dateStr: string): number {
+    const [y, m, d] = dateStr.split('-').map(Number)
+    return new Date(y, m - 1, d, 0, 0, 0, 0).getTime()
+  }
+
+  private parseLocalDateEnd(dateStr: string): number {
+    const [y, m, d] = dateStr.split('-').map(Number)
+    return new Date(y, m - 1, d, 23, 59, 59, 999).getTime()
+  }
+
+  private parseTransactionDateMs(dateStr: string): number {
+    if (!dateStr) return Number.NaN
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return this.parseLocalDateStart(dateStr)
+    }
+    const datePart = dateStr.slice(0, 10)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+      const timePart = dateStr.includes('T') ? dateStr.slice(11) : ''
+      if (!timePart || timePart.startsWith('00:00')) {
+        return this.parseLocalDateStart(datePart)
+      }
+    }
+    return new Date(dateStr).getTime()
+  }
+
+  private getMonthKey(dateStr: string): string | null {
+    const ms = this.parseTransactionDateMs(dateStr)
+    if (Number.isNaN(ms)) return null
+    const date = new Date(ms)
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
   }
 
   private restoreTransactionDraftIfNeeded(): void {
@@ -705,10 +781,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit {
 
   private readDraft(): TransactionFormDraft | null {
     const rawDraft = sessionStorage.getItem(TRANSACTION_FORM_DRAFT_KEY)
-
-    if (!rawDraft) {
-      return null
-    }
+    if (!rawDraft) return null
 
     try {
       return JSON.parse(rawDraft) as TransactionFormDraft
