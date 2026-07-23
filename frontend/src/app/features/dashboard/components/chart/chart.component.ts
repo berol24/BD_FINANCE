@@ -9,6 +9,7 @@ import {
 } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { Transaction, Category } from '../../../../core/services/transaction.service'
+import { CurrencyService } from '../../../../core/services/currency.service'
 import Chart from 'chart.js/auto'
 
 interface MonthSummary {
@@ -31,6 +32,8 @@ type ChartView = 'bar' | 'doughnut'
 export class ChartComponent implements OnChanges, OnDestroy {
   @Input() transactions: Transaction[] = []
   @Input() categories: Category[] = []
+
+  constructor(public readonly currency: CurrencyService) {}
 
   @ViewChild('mainCanvas') set mainCanvasRef(ref: ElementRef<HTMLCanvasElement> | undefined) {
     this.mainCanvas = ref
@@ -189,14 +192,14 @@ export class ChartComponent implements OnChanges, OnDestroy {
           },
           tooltip: {
             callbacks: {
-              label: (context) => `${context.dataset.label}: ${(context.parsed.y ?? 0).toFixed(2)} €`,
+              label: (context) => `${context.dataset.label}: ${(context.parsed.y ?? 0).toFixed(2)} ${this.currency.symbol}`,
             },
           },
         },
         scales: {
           y: {
             beginAtZero: true,
-            ticks: { callback: (value) => `${value} €` },
+            ticks: { callback: (value) => `${value} ${this.currency.symbol}` },
             grid: { color: 'rgba(148, 163, 184, 0.2)' },
           },
           x: { grid: { display: false } },
@@ -265,7 +268,7 @@ export class ChartComponent implements OnChanges, OnDestroy {
               const value = Number(context.parsed) || 0
               const total = (context.dataset.data as number[]).reduce((a, b) => a + b, 0)
               const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0'
-              return `${context.label}: ${value.toFixed(2)} € (${pct}%)`
+              return `${context.label}: ${value.toFixed(2)} ${this.currency.symbol} (${pct}%)`
             },
           },
         },

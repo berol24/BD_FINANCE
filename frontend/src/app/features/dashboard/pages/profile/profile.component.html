@@ -100,6 +100,22 @@
             />
           </div>
 
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Pays / Devise</label>
+            <select
+              [(ngModel)]="pays"
+              [disabled]="!editMode || loading"
+              class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100 disabled:text-slate-500"
+            >
+              <option *ngFor="let country of countries" [value]="country.code">
+                {{ country.name }} — {{ country.symbol }} ({{ country.currency }})
+              </option>
+            </select>
+            <p class="mt-1 text-xs text-slate-500" *ngIf="!editMode">
+              Devise affichée dans l'application : <span class="font-semibold">{{ currency.symbol }}</span>
+            </p>
+          </div>
+
           <div *ngIf="editMode" class="flex gap-4 justify-end">
             <button
               (click)="toggleEditMode()"

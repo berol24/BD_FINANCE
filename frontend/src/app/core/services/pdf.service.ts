@@ -1,11 +1,18 @@
 import { Injectable } from '@angular/core'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import { CurrencyService } from './currency.service'
 
 @Injectable({
   providedIn: 'root',
 })
 export class PdfService {
+  constructor(private readonly currency: CurrencyService) {}
+
+  private get symbol(): string {
+    return this.currency.symbol
+  }
+
   generateTransactionReport(
     userName: string,
     userEmail: string,
@@ -20,6 +27,7 @@ export class PdfService {
     canvas.width = 800
     canvas.height = 600
     const ctx = canvas.getContext('2d')!
+    const symbol = this.symbol
 
     // Title
     ctx.font = 'bold 24px Arial'
@@ -40,13 +48,13 @@ export class PdfService {
 
     ctx.font = '12px Arial'
     ctx.fillStyle = '#48bb78'
-    ctx.fillText(`Recettes: ${totalRecettes.toFixed(2)} €`, 50, 175)
+    ctx.fillText(`Recettes: ${totalRecettes.toFixed(2)} ${symbol}`, 50, 175)
 
     ctx.fillStyle = '#f56565'
-    ctx.fillText(`Dépenses: ${totalDepenses.toFixed(2)} €`, 50, 195)
+    ctx.fillText(`Dépenses: ${totalDepenses.toFixed(2)} ${symbol}`, 50, 195)
 
     ctx.fillStyle = '#4299e1'
-    ctx.fillText(`Solde: ${solde.toFixed(2)} €`, 50, 215)
+    ctx.fillText(`Solde: ${solde.toFixed(2)} ${symbol}`, 50, 215)
 
     // Transactions
     ctx.font = 'bold 12px Arial'
@@ -61,7 +69,7 @@ export class PdfService {
       ctx.fillStyle = '#4a5568'
       const type = t.type === 'recette' ? '+' : '-'
       const amount = t.quantite * t.prix_unitaire
-      ctx.fillText(`${type} ${t.designation}: ${amount.toFixed(2)} €`, 50, yPosition)
+      ctx.fillText(`${type} ${t.designation}: ${amount.toFixed(2)} ${symbol}`, 50, yPosition)
       yPosition += 15
 
       if (yPosition > 550) {
@@ -96,6 +104,7 @@ export class PdfService {
     categoriesAmount: any[] = []
   ): Promise<void> {
     try {
+      const symbol = this.symbol
       // SVG Icons en base64
       const logoSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2310b981'%3E%3Crect x='2' y='6' width='20' height='12' rx='2'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M6 10h.01M6 14h.01M18 10h.01M18 14h.01'/%3E%3C/svg%3E`
       const arrowUpSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2310b981'%3E%3Cpath d='M12 5l-7 7h5v8h4v-8h5z'/%3E%3C/svg%3E`
@@ -147,7 +156,7 @@ export class PdfService {
                   <img src="${arrowUpSvg}" width="28" height="28" />
                   <span style="color: #6b7280; font-size: 11px; font-weight: 600; text-transform: uppercase;">Recettes</span>
                 </div>
-                <p style="margin: 0; color: #10b981; font-size: 24px; font-weight: bold;">+${totalRecettes.toFixed(2)} €</p>
+                <p style="margin: 0; color: #10b981; font-size: 24px; font-weight: bold;">+${totalRecettes.toFixed(2)} ${symbol}</p>
                 <p style="margin: 6px 0 0 0; color: #6b7280; font-size: 11px;">Revenus</p>
               </div>
 
@@ -157,7 +166,7 @@ export class PdfService {
                   <img src="${arrowDownSvg}" width="28" height="28" />
                   <span style="color: #6b7280; font-size: 11px; font-weight: 600; text-transform: uppercase;">Dépenses</span>
                 </div>
-                <p style="margin: 0; color: #ef4444; font-size: 24px; font-weight: bold;">-${totalDepenses.toFixed(2)} €</p>
+                <p style="margin: 0; color: #ef4444; font-size: 24px; font-weight: bold;">-${totalDepenses.toFixed(2)} ${symbol}</p>
                 <p style="margin: 6px 0 0 0; color: #6b7280; font-size: 11px;">Charges</p>
               </div>
 
@@ -167,7 +176,7 @@ export class PdfService {
                   <img src="${balanceSvg}" width="28" height="28" />
                   <span style="color: #6b7280; font-size: 11px; font-weight: 600; text-transform: uppercase;">Solde</span>
                 </div>
-                <p style="margin: 0; color: #3b82f6; font-size: 24px; font-weight: bold;">${(totalRecettes - totalDepenses).toFixed(2)} €</p>
+                <p style="margin: 0; color: #3b82f6; font-size: 24px; font-weight: bold;">${(totalRecettes - totalDepenses).toFixed(2)} ${symbol}</p>
                 <p style="margin: 6px 0 0 0; color: #6b7280; font-size: 11px;">Bilan net</p>
               </div>
             </div>
@@ -196,8 +205,8 @@ export class PdfService {
                     <td style="padding: 10px 8px; color: #4b5563; font-size: 12px;">${new Date(t.date).toLocaleDateString('fr-FR')}</td>
                     <td style="padding: 10px 8px; color: #1f2937; font-size: 12px; font-weight: 500; word-break: break-word;">${t.designation}</td>
                     <td style="padding: 10px 8px; color: #6b7280; font-size: 12px; text-align: center;">${t.quantite}</td>
-                    <td style="padding: 10px 8px; color: #6b7280; font-size: 12px; text-align: right; white-space: nowrap;">${t.prix_unitaire.toFixed(2)} €</td>
-                    <td style="padding: 10px 8px; color: #1f2937; font-weight: 600; text-align: right; font-size: 12px; white-space: nowrap;">${(t.quantite * t.prix_unitaire).toFixed(2)} €</td>
+                    <td style="padding: 10px 8px; color: #6b7280; font-size: 12px; text-align: right; white-space: nowrap;">${t.prix_unitaire.toFixed(2)} ${symbol}</td>
+                    <td style="padding: 10px 8px; color: #1f2937; font-weight: 600; text-align: right; font-size: 12px; white-space: nowrap;">${(t.quantite * t.prix_unitaire).toFixed(2)} ${symbol}</td>
                   </tr>
                 `
                   )
@@ -231,7 +240,7 @@ export class PdfService {
                         ${cat.nom}
                       </div>
                     </td>
-                    <td style="padding: 10px 8px; color: #1f2937; font-weight: 600; text-align: right; font-size: 12px; white-space: nowrap;">${cat.montant.toFixed(2)} €</td>
+                    <td style="padding: 10px 8px; color: #1f2937; font-weight: 600; text-align: right; font-size: 12px; white-space: nowrap;">${cat.montant.toFixed(2)} ${symbol}</td>
                     <td style="padding: 10px 8px; color: #6b7280; text-align: right; font-size: 12px; white-space: nowrap;">${((cat.montant / total) * 100).toFixed(1)}%</td>
                   </tr>
                 `
@@ -239,7 +248,7 @@ export class PdfService {
                   .join('')}
                 <tr style="background: linear-gradient(135deg, #f0fdf4 0%, #f0fdf4 100%); border-top: 2px solid #10b981; page-break-inside: avoid;">
                   <td style="padding: 12px 8px; color: #1f2937; font-size: 12px; font-weight: bold;">TOTAL</td>
-                  <td style="padding: 12px 8px; color: #1f2937; font-weight: bold; text-align: right; font-size: 12px; white-space: nowrap;">${categoriesAmount.reduce((sum, cat) => sum + cat.montant, 0).toFixed(2)} €</td>
+                  <td style="padding: 12px 8px; color: #1f2937; font-weight: bold; text-align: right; font-size: 12px; white-space: nowrap;">${categoriesAmount.reduce((sum, cat) => sum + cat.montant, 0).toFixed(2)} ${symbol}</td>
                   <td style="padding: 12px 8px; color: #1f2937; text-align: right; font-size: 12px; font-weight: bold;">100%</td>
                 </tr>
               </tbody>

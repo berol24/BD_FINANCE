@@ -65,16 +65,16 @@
     <div *ngIf="selectedMonth as month" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
       <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
         <p class="text-xs font-semibold text-emerald-700 uppercase">Recettes</p>
-        <p class="text-2xl font-black text-emerald-700 mt-1">{{ month.recettes | number: '1.2-2' }} €</p>
+        <p class="text-2xl font-black text-emerald-700 mt-1">{{ month.recettes | number: '1.2-2' }} {{ currency.symbol }}</p>
       </div>
       <div class="rounded-xl border border-red-200 bg-red-50 p-4">
         <p class="text-xs font-semibold text-red-700 uppercase">Dépenses</p>
-        <p class="text-2xl font-black text-red-700 mt-1">{{ month.depenses | number: '1.2-2' }} €</p>
+        <p class="text-2xl font-black text-red-700 mt-1">{{ month.depenses | number: '1.2-2' }} {{ currency.symbol }}</p>
       </div>
       <div class="rounded-xl border border-slate-300 bg-slate-800 p-4 text-white">
         <p class="text-xs font-semibold text-slate-300 uppercase">Solde</p>
         <p class="text-2xl font-black mt-1" [class.text-emerald-300]="month.solde >= 0" [class.text-red-300]="month.solde < 0">
-          {{ month.solde | number: '1.2-2' }} €
+          {{ month.solde | number: '1.2-2' }} {{ currency.symbol }}
         </p>
       </div>
     </div>
@@ -91,7 +91,7 @@
         <div>
           <div class="flex justify-between text-sm mb-1">
             <span class="font-semibold text-emerald-700">Recettes</span>
-            <span class="font-bold text-emerald-700">{{ month.recettes | number: '1.0-0' }} €</span>
+            <span class="font-bold text-emerald-700">{{ month.recettes | number: '1.0-0' }} {{ currency.symbol }}</span>
           </div>
           <div class="h-3 bg-slate-200 rounded-full overflow-hidden">
             <div
@@ -103,7 +103,7 @@
         <div>
           <div class="flex justify-between text-sm mb-1">
             <span class="font-semibold text-red-700">Dépenses</span>
-            <span class="font-bold text-red-700">{{ month.depenses | number: '1.0-0' }} €</span>
+            <span class="font-bold text-red-700">{{ month.depenses | number: '1.0-0' }} {{ currency.symbol }}</span>
           </div>
           <div class="h-3 bg-slate-200 rounded-full overflow-hidden">
             <div

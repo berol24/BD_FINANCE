@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common'
 import { ActivatedRoute, Router, RouterModule } from '@angular/router'
 import { AuthService, User } from '../../../../core/services/auth.service'
 import { TransactionService, Category, Transaction } from '../../../../core/services/transaction.service'
+import { CurrencyService } from '../../../../core/services/currency.service'
 import { HeaderComponent } from '../../components/header/header.component'
 import { StatsComponent } from '../../components/stats/stats.component'
 import { ChartComponent } from '../../components/chart/chart.component'
@@ -59,7 +60,8 @@ export class DashboardComponent implements OnInit {
     private readonly authService: AuthService,
     private readonly transactionService: TransactionService,
     private readonly route: ActivatedRoute,
-    private readonly router: Router
+    private readonly router: Router,
+    public readonly currency: CurrencyService
   ) {}
 
   ngOnInit(): void {

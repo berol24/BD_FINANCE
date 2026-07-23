@@ -127,7 +127,7 @@
         ></app-stats>
         <div class="rounded-2xl border border-slate-300 bg-slate-800 text-white shadow-xl p-4 sm:p-6 flex flex-col justify-between">
           <p class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Solde actuel</p>
-          <p class="text-3xl sm:text-4xl font-black mt-2">{{ solde | number: '1.2-2' }} €</p>
+          <p class="text-3xl sm:text-4xl font-black mt-2">{{ solde | number: '1.2-2' }} {{ currency.symbol }}</p>
           <p class="text-sm text-slate-300 mt-2">Mis à jour selon vos dernières transactions</p>
         </div>
       </div>

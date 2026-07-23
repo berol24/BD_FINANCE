@@ -7,6 +7,8 @@ export interface User {
   nom: string
   prenom: string
   email: string
+  pays?: string
+  devise?: string
 }
 
 export interface AuthResponse {
@@ -40,7 +42,14 @@ export class AuthService {
     return response
   }
 
-  async register(nom: string, prenom: string, email: string, password: string, confirmPassword: string): Promise<any> {
+  async register(
+    nom: string,
+    prenom: string,
+    email: string,
+    password: string,
+    confirmPassword: string,
+    pays: string
+  ): Promise<any> {
     return await this.http
       .post(`${environment.apiBaseUrl}/auth/register`, {
         nom,
@@ -48,6 +57,7 @@ export class AuthService {
         email,
         password,
         confirmPassword,
+        pays,
         createdAt: new Date(),
       })
       .toPromise()

@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs'
 import { AuthService, User } from '../../../../core/services/auth.service'
 import { TransactionService, Category, Transaction } from '../../../../core/services/transaction.service'
 import { PdfService } from '../../../../core/services/pdf.service'
+import { CurrencyService } from '../../../../core/services/currency.service'
 import { AddTransactionFormComponent } from '../../components/add-transaction-form/add-transaction-form.component'
 import Chart from 'chart.js/auto'
 
@@ -110,7 +111,8 @@ export class TransactionsListComponent implements OnInit, AfterViewInit, OnDestr
     private readonly transactionService: TransactionService,
     private readonly pdfService: PdfService,
     private readonly route: ActivatedRoute,
-    private readonly router: Router
+    private readonly router: Router,
+    public readonly currency: CurrencyService
   ) {}
 
   ngOnInit(): void {
@@ -424,7 +426,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit, OnDestr
             label: (context) => {
               const label = context.label || ''
               const value = context.parsed || 0
-              return `${label}: ${value.toFixed(2)} €`
+              return `${label}: ${value.toFixed(2)} ${this.currency.symbol}`
             },
           },
         },
@@ -679,7 +681,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit, OnDestr
             backgroundColor: 'rgba(0, 0, 0, 0.8)',
             padding: 12,
             callbacks: {
-              label: (context) => `${context.dataset.label}: ${(context.parsed.y ?? 0).toFixed(2)} €`,
+              label: (context) => `${context.dataset.label}: ${(context.parsed.y ?? 0).toFixed(2)} ${this.currency.symbol}`,
             },
           },
         },
@@ -687,7 +689,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit, OnDestr
           y: {
             beginAtZero: true,
             ticks: {
-              callback: (value) => `${value} €`,
+              callback: (value) => `${value} ${this.currency.symbol}`,
             },
             grid: { color: 'rgba(148, 163, 184, 0.2)' },
           },

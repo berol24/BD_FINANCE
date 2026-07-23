@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router'
 import { AuthService } from '../../../../core/services/auth.service'
 import { I18nPipe } from '../../../../core/pipes/i18n.pipe'
 import { I18nService } from '../../../../core/services/i18n.service'
+import { COUNTRIES, Country, findCountry } from '../../../../core/data/countries'
 
 @Component({
   selector: 'app-register',
@@ -19,10 +20,12 @@ export class RegisterComponent {
   email = ''
   password = ''
   confirmPassword = ''
+  pays = ''
   showPassword = false
   showConfirmPassword = false
   loading = false
   error = ''
+  countries = COUNTRIES
 
   constructor(
     private authService: AuthService,
@@ -30,8 +33,12 @@ export class RegisterComponent {
     private i18nService: I18nService
   ) {}
 
+  get selectedCountry(): Country | undefined {
+    return findCountry(this.pays)
+  }
+
   async register(): Promise<void> {
-    if (!this.nom || !this.prenom || !this.email || !this.password || !this.confirmPassword) {
+    if (!this.nom || !this.prenom || !this.email || !this.password || !this.confirmPassword || !this.pays) {
       this.error = this.i18nService.t('auth.fillAllFields')
       return
     }
@@ -45,7 +52,14 @@ export class RegisterComponent {
     this.error = ''
 
     try {
-      await this.authService.register(this.nom, this.prenom, this.email, this.password, this.confirmPassword)
+      await this.authService.register(
+        this.nom,
+        this.prenom,
+        this.email,
+        this.password,
+        this.confirmPassword,
+        this.pays
+      )
       this.router.navigate(['/auth/login'])
     } catch (err: any) {
       this.error = err.error?.message || this.i18nService.t('auth.registerError')

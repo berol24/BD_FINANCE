@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { Router, ActivatedRoute } from '@angular/router'
 import { TransactionService, Category } from '../../../../core/services/transaction.service'
 import { AuthService } from '../../../../core/services/auth.service'
+import { CurrencyService } from '../../../../core/services/currency.service'
 
 interface AddTransactionDraft {
   returnTo: string
@@ -37,6 +38,7 @@ export class AddTransactionComponent implements OnInit {
     private readonly authService: AuthService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
+    public readonly currency: CurrencyService,
   ) {}
 
   ngOnInit(): void {

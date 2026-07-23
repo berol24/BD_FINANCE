@@ -54,6 +54,25 @@
         />
       </div>
 
+      <div>
+        <label class="mb-2 block text-sm font-semibold text-slate-700">{{ 'auth.country' | i18n }}</label>
+        <select
+          [(ngModel)]="pays"
+          name="pays"
+          class="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+          [disabled]="loading"
+        >
+          <option value="" disabled>{{ 'auth.selectCountry' | i18n }}</option>
+          <option *ngFor="let country of countries" [value]="country.code">
+            {{ country.name }} — {{ country.symbol }} ({{ country.currency }})
+          </option>
+        </select>
+        <p *ngIf="selectedCountry" class="mt-2 text-sm text-slate-500">
+          {{ 'auth.currencyHint' | i18n }} :
+          <span class="font-semibold text-emerald-700">{{ selectedCountry.symbol }} ({{ selectedCountry.currency }})</span>
+        </p>
+      </div>
+
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="mb-2 block text-sm font-semibold text-slate-700">{{ 'auth.password' | i18n }}</label>

@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { Transaction, Category } from '../../../../core/services/transaction.service'
+import { CurrencyService } from '../../../../core/services/currency.service'
 
 @Component({
   selector: 'app-transaction-table',
@@ -14,6 +15,8 @@ export class TransactionTableComponent {
   @Input() categories: Category[] = []
   @Output() delete = new EventEmitter<number>()
   @Output() edit = new EventEmitter<Transaction>()
+
+  constructor(public readonly currency: CurrencyService) {}
 
   getCategoryName(categorie_id: number): string {
     const category = this.categories.find((c) => c.id === categorie_id)

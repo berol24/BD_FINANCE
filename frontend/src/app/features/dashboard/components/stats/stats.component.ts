@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core'
 import { CommonModule } from '@angular/common'
+import { CurrencyService } from '../../../../core/services/currency.service'
 
 @Component({
   selector: 'app-stats',
@@ -12,6 +13,8 @@ export class StatsComponent {
   @Input() amount = 0
   @Input() icon = 'trend-up'
   @Input() color: 'success' | 'danger' | 'warning' | 'primary' = 'primary'
+
+  constructor(public readonly currency: CurrencyService) {}
 
   get bgClass(): string {
     const colors: Record<string, string> = {

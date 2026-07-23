@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { AuthService, User } from '../../../../core/services/auth.service'
 import { TransactionService } from '../../../../core/services/transaction.service'
+import { CurrencyService } from '../../../../core/services/currency.service'
+import { COUNTRIES } from '../../../../core/data/countries'
 
 @Component({
   selector: 'app-profile',
@@ -19,11 +21,13 @@ export class ProfileComponent implements OnInit {
   loading = false
   successMessage = ''
   errorMessage = ''
+  countries = COUNTRIES
 
   // Édition profil
   nom = ''
   prenom = ''
   email = ''
+  pays = ''
 
   // Édition mot de passe
   currentPassword = ''
@@ -36,7 +40,8 @@ export class ProfileComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private transactionService: TransactionService,
-    private router: Router
+    private router: Router,
+    public currency: CurrencyService
   ) {}
 
   ngOnInit(): void {
@@ -53,11 +58,14 @@ export class ProfileComponent implements OnInit {
 
       const profile = await this.transactionService.getProfile()
       this.user = profile.data?.user || profile.user
-      this.authService.getCurrentUser() // Update local storage
+      if (this.user) {
+        localStorage.setItem('user', JSON.stringify(this.user))
+      }
 
       this.nom = this.user?.nom || ''
       this.prenom = this.user?.prenom || ''
       this.email = this.user?.email || ''
+      this.pays = this.user?.pays || 'FR'
     } catch (error) {
       console.error('Erreur lors du chargement du profil:', error)
       this.errorMessage = 'Erreur lors du chargement du profil'
@@ -82,6 +90,7 @@ export class ProfileComponent implements OnInit {
     this.nom = this.user?.nom || ''
     this.prenom = this.user?.prenom || ''
     this.email = this.user?.email || ''
+    this.pays = this.user?.pays || 'FR'
     this.errorMessage = ''
     this.successMessage = ''
   }
@@ -102,18 +111,26 @@ export class ProfileComponent implements OnInit {
 
     this.loading = true
     try {
-      await this.transactionService.updateProfile({
+      const response = await this.transactionService.updateProfile({
         nom: this.nom,
         prenom: this.prenom,
         email: this.email,
+        pays: this.pays,
       })
 
-      // Update current user in auth service
-      this.user = { ...this.user!, nom: this.nom, prenom: this.prenom, email: this.email }
+      const updatedUser = response?.user || response?.data?.user
+      this.user = {
+        ...this.user!,
+        nom: this.nom,
+        prenom: this.prenom,
+        email: this.email,
+        pays: updatedUser?.pays || this.pays,
+        devise: updatedUser?.devise || this.user?.devise,
+      }
       localStorage.setItem('user', JSON.stringify(this.user))
 
       this.editMode = false
-      this.successMessage = 'Profil mis à jour avec succès'
+      this.successMessage = response?.warning || response?.message || 'Profil mis à jour avec succès'
       setTimeout(() => {
         this.successMessage = ''
       }, 3000)
