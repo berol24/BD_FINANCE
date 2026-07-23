@@ -8,28 +8,35 @@ export const getTransactions = async (req, res) => {
     const userId = Number.parseInt(req.userId, 10);
     let query = supabase
         .from('transactions')
-        .select('id, user_id, date, type, designation, quantite, prix_unitaire, categorie_id')
+        .select('*')
         .eq('user_id', userId)
         .order('date', { ascending: false });
     if (type && type.trim() !== '') {
         query = query.eq('type', type);
     }
     const { data, error } = await query;
-    // Debug: afficher les données retournées
+    if (error) {
+        console.error('Erreur chargement transactions:', error);
+        res.status(400).json({ message: 'Erreur lors du chargement des transactions', error: error.message });
+        return;
+    }
     if (data && data.length > 0) {
         console.log('🔍 Backend - Première transaction:', JSON.stringify(data[0], null, 2));
     }
     const transactions = data;
-    res.json({ data: transactions, error });
+    res.json({ data: transactions, error: null });
 };
 export const createTransaction = async (req, res) => {
     if (!req.userId) {
         res.status(401).json({ message: 'User not authenticated' });
         return;
     }
-    const { designation, quantite, prix_unitaire, categorie_id, date, type } = req.body;
+    const { designation, quantite, prix_unitaire, categorie_id, date, type, moyen_paiement } = req.body;
     const userId = parseInt(req.userId, 10);
     const sanitizedType = type === 'depense' ? 'depense' : type === 'recette' ? 'recette' : null;
+    const sanitizedPaiement = moyen_paiement === 'carte' || moyen_paiement === 'cheque' || moyen_paiement === 'espece'
+        ? moyen_paiement
+        : 'espece';
     if (!designation ||
         quantite === undefined ||
         quantite === null ||
@@ -41,9 +48,7 @@ export const createTransaction = async (req, res) => {
         res.status(400).json({ message: 'Designation, quantité, prix, catégorie et type requis' });
         return;
     }
-    const { data, error } = await supabase
-        .from('transactions')
-        .insert({
+    const payload = {
         user_id: userId,
         designation,
         quantite: Number(quantite),
@@ -51,11 +56,20 @@ export const createTransaction = async (req, res) => {
         categorie_id: Number(categorie_id),
         type: sanitizedType,
         date: date || new Date().toISOString(),
-    })
-        .select();
+        moyen_paiement: sanitizedPaiement,
+    };
+    console.log('💾 Création transaction:', payload);
+    const { data, error } = await supabase.from('transactions').insert(payload).select();
     if (error) {
         console.error('Supabase error creating transaction:', error);
-        res.status(400).json({ message: 'Erreur lors de la création de la transaction', error: error.message });
+        const needsMigration = String(error.message || '').toLowerCase().includes('moyen_paiement') ||
+            String(error.code || '') === 'PGRST204';
+        res.status(400).json({
+            message: needsMigration
+                ? 'La colonne moyen_paiement manque. Exécutez le SQL add_moyen_paiement.sql dans Supabase (SQL Editor).'
+                : 'Erreur lors de la création de la transaction',
+            error: error.message,
+        });
         return;
     }
     res.json(data);
@@ -66,21 +80,41 @@ export const updateTransaction = async (req, res) => {
         return;
     }
     const { id } = req.params;
-    const { designation, quantite, prix_unitaire, categorie_id, date, type } = req.body;
+    const { designation, quantite, prix_unitaire, categorie_id, date, type, moyen_paiement } = req.body;
     const userId = parseInt(req.userId, 10);
     const sanitizedType = type === 'depense' ? 'depense' : type === 'recette' ? 'recette' : null;
+    const sanitizedPaiement = moyen_paiement === 'carte' || moyen_paiement === 'cheque' || moyen_paiement === 'espece'
+        ? moyen_paiement
+        : undefined;
     if (!sanitizedType) {
         res.status(400).json({ message: 'Type de transaction invalide' });
         return;
     }
+    const updatePayload = {
+        designation,
+        quantite: Number(quantite),
+        prix_unitaire: Number(prix_unitaire),
+        categorie_id: Number(categorie_id),
+        date,
+        type: sanitizedType,
+        moyen_paiement: sanitizedPaiement || 'espece',
+    };
+    console.log('✏️ Mise à jour transaction', id, updatePayload);
     const { data, error } = await supabase
         .from('transactions')
-        .update({ designation, quantite, prix_unitaire, categorie_id, date, type: sanitizedType })
+        .update(updatePayload)
         .eq('id', id)
         .eq('user_id', userId)
         .select();
     if (error) {
-        res.status(400).json({ error: error.message });
+        const needsMigration = String(error.message || '').toLowerCase().includes('moyen_paiement') ||
+            String(error.code || '') === 'PGRST204';
+        res.status(400).json({
+            message: needsMigration
+                ? 'La colonne moyen_paiement manque. Exécutez le SQL add_moyen_paiement.sql dans Supabase (SQL Editor).'
+                : error.message,
+            error: error.message,
+        });
         return;
     }
     if (!data || data.length === 0) {

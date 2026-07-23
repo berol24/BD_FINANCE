@@ -69,6 +69,12 @@ const options = {
                         quantite: { type: 'number', example: 2, description: 'Quantité achetée' },
                         prix_unitaire: { type: 'number', format: 'float', example: 25.5, description: 'Prix unitaire' },
                         categorie_id: { type: 'integer', example: 1, description: 'ID de la catégorie' },
+                        moyen_paiement: {
+                            type: 'string',
+                            enum: ['espece', 'carte', 'cheque'],
+                            example: 'espece',
+                            description: 'Moyen de paiement',
+                        },
                     },
                     required: ['type', 'designation', 'quantite', 'prix_unitaire', 'categorie_id'],
                 },
