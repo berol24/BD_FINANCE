@@ -2,7 +2,7 @@ import { Component, Output, EventEmitter, OnInit, Input, OnChanges, SimpleChange
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
-import { TransactionService, Category, Transaction } from '../../../../core/services/transaction.service'
+import { TransactionService, Category, Transaction, MoyenPaiement, MOYENS_PAIEMENT } from '../../../../core/services/transaction.service'
 import { CurrencyService } from '../../../../core/services/currency.service'
 
 interface TransactionFormDraft {
@@ -16,6 +16,7 @@ interface TransactionFormDraft {
     prix_unitaire: number
     categorie_id: number
     date: string
+    moyen_paiement: MoyenPaiement
   }
 }
 
@@ -37,6 +38,8 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
   quantite = 0
   prix_unitaire = 0
   categorie_id = 0
+  moyen_paiement: MoyenPaiement = 'espece'
+  moyensPaiement = MOYENS_PAIEMENT
   date = new Date().toISOString().split('T')[0]
   categories: Category[] = []
   loading = false
@@ -61,6 +64,10 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
 
   get filteredCategories(): Category[] {
     return this.categories
+  }
+
+  get selectedMoyenLabel(): string {
+    return this.moyensPaiement.find((m) => m.value === this.moyen_paiement)?.label || 'Espèce'
   }
 
   async loadCategories(): Promise<void> {
@@ -89,6 +96,7 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
     this.categorie_id = this.editingTransaction.categorie_id
     this.date = this.editingTransaction.date.split('T')[0]
     this.type = this.editingTransaction.type
+    this.moyen_paiement = this.editingTransaction.moyen_paiement || 'espece'
 
     this.lastEditingId = this.editingTransaction.id
   }
@@ -110,6 +118,7 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
         prix_unitaire: this.prix_unitaire,
         categorie_id: this.categorie_id,
         date: this.date,
+        moyen_paiement: this.moyen_paiement,
       },
     }
 
@@ -124,7 +133,7 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
   }
 
   async onSubmit(): Promise<void> {
-    if (!this.designation || !this.quantite || !this.prix_unitaire || !this.categorie_id) {
+    if (!this.designation || !this.quantite || !this.prix_unitaire || !this.categorie_id || !this.moyen_paiement) {
       this.error = 'Veuillez remplir tous les champs obligatoires'
       return
     }
@@ -140,13 +149,12 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
         categorie_id: this.categorie_id,
         type: this.type,
         date: this.date + 'T00:00:00',
+        moyen_paiement: this.moyen_paiement,
       }
 
       if (this.editingTransaction) {
-        // Éditer la transaction existante
         await this.transactionService.updateTransaction(this.editingTransaction.id, payload)
       } else {
-        // Créer une nouvelle transaction
         await this.transactionService.createTransaction(payload)
       }
 
@@ -157,7 +165,7 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
         this.formCancel.emit()
       }
     } catch (err: any) {
-      this.error = err?.message || 'Erreur lors de la création'
+      this.error = err?.error?.message || err?.message || 'Erreur lors de la création'
     } finally {
       this.loading = false
     }
@@ -179,6 +187,7 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
     this.quantite = 0
     this.prix_unitaire = 0
     this.categorie_id = 0
+    this.moyen_paiement = 'espece'
     this.date = new Date().toISOString().split('T')[0]
     this.type = 'recette'
     this.error = ''
@@ -201,6 +210,7 @@ export class AddTransactionFormComponent implements OnInit, OnChanges {
     this.prix_unitaire = draft.data.prix_unitaire
     this.categorie_id = draft.data.categorie_id
     this.date = draft.data.date
+    this.moyen_paiement = draft.data.moyen_paiement || 'espece'
 
     sessionStorage.removeItem(TRANSACTION_FORM_DRAFT_KEY)
   }

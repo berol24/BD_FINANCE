@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { Router, ActivatedRoute } from '@angular/router'
-import { TransactionService, Category } from '../../../../core/services/transaction.service'
+import { TransactionService, Category, MoyenPaiement, MOYENS_PAIEMENT } from '../../../../core/services/transaction.service'
 import { AuthService } from '../../../../core/services/auth.service'
 import { CurrencyService } from '../../../../core/services/currency.service'
 
@@ -13,6 +13,7 @@ interface AddTransactionDraft {
     amount: number
     categoryId: number
     description: string
+    moyen_paiement: MoyenPaiement
   }
 }
 
@@ -29,6 +30,8 @@ export class AddTransactionComponent implements OnInit {
   amount = 0
   categoryId = 0
   description = ''
+  moyen_paiement: MoyenPaiement = 'espece'
+  moyensPaiement = MOYENS_PAIEMENT
   categories: Category[] = []
   loading = false
   error = ''
@@ -59,7 +62,7 @@ export class AddTransactionComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (!this.amount || !this.categoryId) {
+    if (!this.amount || !this.categoryId || !this.moyen_paiement) {
       this.error = 'Veuillez remplir tous les champs'
       return
     }
@@ -75,16 +78,18 @@ export class AddTransactionComponent implements OnInit {
       }
 
       await this.transactionService.createTransaction({
-        amount: this.amount,
+        designation: this.description || (this.type === 'recette' ? 'Recette' : 'Dépense'),
+        quantite: 1,
+        prix_unitaire: this.amount,
+        categorie_id: this.categoryId,
         type: this.type,
-        categoryId: this.categoryId,
-        description: this.description,
-        createdAt: new Date().toISOString(),
+        date: new Date().toISOString(),
+        moyen_paiement: this.moyen_paiement,
       })
 
       this.router.navigate(['/dashboard'])
     } catch (err: any) {
-      this.error = err?.message || 'Erreur lors de la création'
+      this.error = err?.error?.message || err?.message || 'Erreur lors de la création'
     } finally {
       this.loading = false
     }
@@ -103,6 +108,7 @@ export class AddTransactionComponent implements OnInit {
         amount: this.amount,
         categoryId: this.categoryId,
         description: this.description,
+        moyen_paiement: this.moyen_paiement,
       },
     }
 
@@ -134,6 +140,7 @@ export class AddTransactionComponent implements OnInit {
       this.amount = draft.data.amount
       this.categoryId = draft.data.categoryId
       this.description = draft.data.description
+      this.moyen_paiement = draft.data.moyen_paiement || 'espece'
       sessionStorage.removeItem(ADD_TRANSACTION_DRAFT_KEY)
     } catch {
       sessionStorage.removeItem(ADD_TRANSACTION_DRAFT_KEY)

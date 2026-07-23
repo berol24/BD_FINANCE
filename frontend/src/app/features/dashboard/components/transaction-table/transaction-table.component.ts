@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core'
 import { CommonModule } from '@angular/common'
-import { Transaction, Category } from '../../../../core/services/transaction.service'
+import { Transaction, Category, labelMoyenPaiement } from '../../../../core/services/transaction.service'
 import { CurrencyService } from '../../../../core/services/currency.service'
 
 @Component({
@@ -21,6 +21,10 @@ export class TransactionTableComponent {
   getCategoryName(categorie_id: number): string {
     const category = this.categories.find((c) => c.id === categorie_id)
     return category?.nom || 'Sans catégorie'
+  }
+
+  getMoyenPaiementLabel(transaction: Transaction): string {
+    return labelMoyenPaiement(transaction.moyen_paiement)
   }
 
   get displayedTransactions(): Transaction[] {

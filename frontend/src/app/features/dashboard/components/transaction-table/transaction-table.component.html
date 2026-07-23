@@ -20,6 +20,7 @@
             <p class="text-sm font-bold text-slate-900 truncate">{{ transaction.designation }}</p>
             <p class="text-xs text-slate-500 mt-0.5">{{ transaction.date | date: 'dd/MM/yyyy' }}</p>
             <p class="text-xs text-slate-500 mt-0.5">{{ getCategoryName(transaction.categorie_id) }}</p>
+            <p class="text-xs text-emerald-700 mt-0.5 font-semibold">{{ getMoyenPaiementLabel(transaction) }}</p>
           </div>
           <p class="text-sm font-extrabold whitespace-nowrap" [ngClass]="getAmountClass(transaction)">
             {{ getTransactionSign(transaction) }}{{ getAbsoluteAmount(transaction) | number: '1.2-2' }} {{ currency.symbol }}
@@ -54,12 +55,13 @@
             <th class="hidden md:table-cell px-3 sm:px-4 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">Prix unit.</th>
             <th class="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">Montant</th>
             <th class="hidden sm:table-cell px-3 sm:px-4 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">Catégorie</th>
+            <th class="hidden lg:table-cell px-3 sm:px-4 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">Paiement</th>
             <th class="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngIf="displayedTransactions.length === 0">
-            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+            <td colspan="8" class="px-4 py-8 text-center text-gray-500">
               <div class="flex flex-col items-center gap-2">
                 <svg class="w-16 h-16 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -90,6 +92,9 @@
             </td>
             <td class="hidden sm:table-cell px-3 sm:px-4 py-3">
               {{ getCategoryName(transaction.categorie_id) }}
+            </td>
+            <td class="hidden lg:table-cell px-3 sm:px-4 py-3 text-slate-600">
+              {{ getMoyenPaiementLabel(transaction) }}
             </td>
             <td class="px-3 sm:px-4 py-3">
               <div class="flex gap-2 flex-wrap">

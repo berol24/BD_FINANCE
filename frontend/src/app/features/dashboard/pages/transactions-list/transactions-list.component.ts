@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { Subscription } from 'rxjs'
 import { AuthService, User } from '../../../../core/services/auth.service'
-import { TransactionService, Category, Transaction } from '../../../../core/services/transaction.service'
+import { TransactionService, Category, Transaction, labelMoyenPaiement } from '../../../../core/services/transaction.service'
 import { PdfService } from '../../../../core/services/pdf.service'
 import { CurrencyService } from '../../../../core/services/currency.service'
 import { AddTransactionFormComponent } from '../../components/add-transaction-form/add-transaction-form.component'
@@ -505,6 +505,14 @@ export class TransactionsListComponent implements OnInit, AfterViewInit, OnDestr
     return this.categoryById.get(Number(categoryId))?.nom || '-'
   }
 
+  /** Libellé du moyen de paiement (espèce / carte / chèque) */
+  getMoyenPaiementLabel(transaction: Transaction): string {
+    if (!transaction?.moyen_paiement) {
+      return 'Espèce'
+    }
+    return labelMoyenPaiement(transaction.moyen_paiement)
+  }
+
   getTransactionSign(transaction: Transaction): string {
     return this.getSignedAmount(transaction) >= 0 ? '+' : '-'
   }
@@ -775,6 +783,7 @@ export class TransactionsListComponent implements OnInit, AfterViewInit, OnDestr
       quantite: draft.data.quantite,
       prix_unitaire: draft.data.prix_unitaire,
       categorie_id: draft.data.categorie_id,
+      moyen_paiement: (draft.data as any).moyen_paiement || 'espece',
     }
 
     sessionStorage.removeItem(TRANSACTION_FORM_DRAFT_KEY)

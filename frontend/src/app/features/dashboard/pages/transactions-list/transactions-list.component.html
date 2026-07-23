@@ -298,6 +298,7 @@
                 <p class="text-sm font-bold text-slate-900 truncate">{{ transaction.designation }}</p>
                 <p class="text-xs text-slate-500 mt-0.5">{{ transaction.date | date: 'dd/MM/yyyy' }}</p>
                 <p class="text-xs text-slate-500 mt-0.5">{{ getCategoryName(transaction.categorie_id) }}</p>
+                <p class="text-xs text-emerald-700 mt-0.5 font-semibold">{{ getMoyenPaiementLabel(transaction) }}</p>
               </div>
               <p class="text-sm font-extrabold whitespace-nowrap" [ngClass]="isPositiveTransaction(transaction) ? 'text-emerald-600' : 'text-slate-700'">
                 {{ getTransactionSign(transaction) }}{{ getAbsoluteAmount(transaction) | number: '1.2-2' }} {{ currency.symbol }}
@@ -335,6 +336,7 @@
                 </th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">Désignation</th>
                 <th class="px-6 py-4 text-left text-sm font-semibold">Catégorie</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold">Paiement</th>
                 <th class="px-6 py-4 text-right text-sm font-semibold">
                   <button
                     (click)="toggleSort('price')"
@@ -357,6 +359,9 @@
                 </td>
                 <td class="px-6 py-4 text-sm text-slate-600">
                   {{ getCategoryName(transaction.categorie_id) }}
+                </td>
+                <td class="px-6 py-4 text-sm text-slate-600">
+                  {{ getMoyenPaiementLabel(transaction) }}
                 </td>
                 <td class="px-6 py-4 text-sm font-bold text-right" [ngClass]="isPositiveTransaction(transaction) ? 'text-emerald-600' : 'text-slate-700'">
                   {{ getTransactionSign(transaction) }}{{ getAbsoluteAmount(transaction) | number: '1.2-2' }} {{ currency.symbol }}

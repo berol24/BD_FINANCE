@@ -11,6 +11,8 @@ export interface Category {
   type?: string | null
 }
 
+export type MoyenPaiement = 'espece' | 'carte' | 'cheque'
+
 export interface Transaction {
   id: number
   user_id: number
@@ -20,6 +22,17 @@ export interface Transaction {
   quantite: number
   prix_unitaire: number
   categorie_id: number
+  moyen_paiement?: MoyenPaiement | null
+}
+
+export const MOYENS_PAIEMENT: { value: MoyenPaiement; label: string }[] = [
+  { value: 'espece', label: 'Espèce' },
+  { value: 'carte', label: 'Carte bancaire' },
+  { value: 'cheque', label: 'Chèque' },
+]
+
+export function labelMoyenPaiement(value?: MoyenPaiement | null): string {
+  return MOYENS_PAIEMENT.find((m) => m.value === value)?.label || 'Espèce'
 }
 
 @Injectable({
