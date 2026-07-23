@@ -4,5 +4,7 @@ export interface User {
   prenom: string
   email: string
   password: string
-  createdAt:  Date
+  pays: string
+  devise: string
+  createdAt: Date
 }

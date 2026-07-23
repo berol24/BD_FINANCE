@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { supabase } from '../config/supabase.js'
 import type { User } from '../models/User.js'
+import { findCountry } from '../data/countries.js'
 
 type RegisterBody = {
   nom: string
@@ -10,6 +11,7 @@ type RegisterBody = {
   email: string
   password: string
   confirmPassword: string
+  pays: string
   createdAt?: string | Date
 }
 
@@ -35,12 +37,23 @@ const signRefreshToken = (userId: string, secret: string): string => {
 }
 
 export const register = async (req: Request, res: Response): Promise<void> => {
-  const { nom, prenom, email, password, confirmPassword, createdAt } =
+  const { nom, prenom, email, password, confirmPassword, pays, createdAt } =
     req.body as RegisterBody
 
   try {
     if (!password || !confirmPassword || password !== confirmPassword) {
       res.status(400).json({ message: 'Les mots de passe ne correspondent pas' })
+      return
+    }
+
+    if (!pays) {
+      res.status(400).json({ message: 'Veuillez sélectionner un pays' })
+      return
+    }
+
+    const country = findCountry(pays)
+    if (!country) {
+      res.status(400).json({ message: 'Pays non reconnu' })
       return
     }
 
@@ -54,12 +67,25 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         prenom,
         email,
         password: hashedPassword,
+        pays: country.code,
+        devise: country.currency,
         createdAt: createdAtValue
       }
     ])
 
     if (error) {
-      res.status(500).json({ error })
+      const hint =
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error &&
+        String((error as { message?: string }).message || '').toLowerCase().includes('pays')
+          ? 'Exécutez le fichier backend/supabase/add_pays_devise.sql dans le SQL Editor de Supabase.'
+          : undefined
+
+      res.status(500).json({
+        message: hint || 'Erreur lors de l\'inscription',
+        error,
+      })
       return
     }
 

@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import bcrypt from 'bcrypt';
+import { findCountry } from '../data/countries.js';
 export const getCurrentUser = async (req, res) => {
     if (!req.userId) {
         res.status(401).json({ message: 'User not authenticated' });
@@ -7,16 +8,24 @@ export const getCurrentUser = async (req, res) => {
     }
     try {
         const userId = parseInt(req.userId, 10);
+        // select('*' ) évite l'erreur 404 si les colonnes pays/devise n'existent pas encore
         const { data, error } = await supabase
             .from('users')
-            .select('id, nom, prenom, email, createdAt')
+            .select('*')
             .eq('id', userId)
             .single();
         if (error || !data) {
             res.status(404).json({ message: 'User not found', error });
             return;
         }
-        res.json({ user: data });
+        const { password: _password, ...user } = data;
+        res.json({
+            user: {
+                ...user,
+                pays: user.pays ?? null,
+                devise: user.devise ?? 'EUR',
+            },
+        });
     }
     catch (err) {
         res.status(500).json({ message: 'Error fetching user profile', error: err.message });
@@ -29,34 +38,61 @@ export const updateProfile = async (req, res) => {
     }
     try {
         const userId = parseInt(req.userId, 10);
-        const { nom, prenom, email } = req.body;
-        // Validation
+        const { nom, prenom, email, pays } = req.body;
         if (!nom || !prenom || !email) {
             res.status(400).json({ message: 'nom, prenom, and email are required' });
             return;
         }
-        // Check if email is already taken by another user
         const { data: existingEmail } = await supabase
             .from('users')
             .select('id')
             .eq('email', email)
             .neq('id', userId)
-            .single();
+            .maybeSingle();
         if (existingEmail) {
             res.status(400).json({ message: 'Email already taken' });
             return;
         }
+        // 1) Mise à jour de base (toujours possible)
         const { data, error } = await supabase
             .from('users')
             .update({ nom, prenom, email })
             .eq('id', userId)
-            .select('id, nom, prenom, email, createdAt')
+            .select('*')
             .single();
-        if (error) {
+        if (error || !data) {
             res.status(400).json({ message: 'Error updating profile', error });
             return;
         }
-        res.json({ message: 'Profile updated successfully', user: data });
+        let user = data;
+        let countryWarning;
+        // 2) Mise à jour pays/devise (optionnelle — nécessite les colonnes en base)
+        if (pays) {
+            const country = findCountry(pays);
+            if (!country) {
+                res.status(400).json({ message: 'Pays non reconnu' });
+                return;
+            }
+            const countryUpdate = await supabase
+                .from('users')
+                .update({ pays: country.code, devise: country.currency })
+                .eq('id', userId)
+                .select('*')
+                .single();
+            if (countryUpdate.error) {
+                countryWarning =
+                    'Profil enregistré, mais le pays/devise n’a pas pu être sauvé. Exécutez backend/supabase/add_pays_devise.sql dans Supabase.';
+            }
+            else if (countryUpdate.data) {
+                user = countryUpdate.data;
+            }
+        }
+        const { password: _password, ...safeUser } = user;
+        res.json({
+            message: countryWarning || 'Profile updated successfully',
+            warning: countryWarning,
+            user: safeUser,
+        });
     }
     catch (err) {
         res.status(500).json({ message: 'Error updating profile', error: err.message });

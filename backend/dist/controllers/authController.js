@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { supabase } from '../config/supabase.js';
+import { findCountry } from '../data/countries.js';
 const getAccessSecret = () => {
     return process.env.JWT_ACCESS_SECRET ?? process.env.JWT_SECRET;
 };
@@ -14,10 +15,19 @@ const signRefreshToken = (userId, secret) => {
     return jwt.sign({ userId }, secret, { expiresIn: '7d' });
 };
 export const register = async (req, res) => {
-    const { nom, prenom, email, password, confirmPassword, createdAt } = req.body;
+    const { nom, prenom, email, password, confirmPassword, pays, createdAt } = req.body;
     try {
         if (!password || !confirmPassword || password !== confirmPassword) {
             res.status(400).json({ message: 'Les mots de passe ne correspondent pas' });
+            return;
+        }
+        if (!pays) {
+            res.status(400).json({ message: 'Veuillez sélectionner un pays' });
+            return;
+        }
+        const country = findCountry(pays);
+        if (!country) {
+            res.status(400).json({ message: 'Pays non reconnu' });
             return;
         }
         const salt = await bcrypt.genSalt(10);
@@ -29,11 +39,22 @@ export const register = async (req, res) => {
                 prenom,
                 email,
                 password: hashedPassword,
+                pays: country.code,
+                devise: country.currency,
                 createdAt: createdAtValue
             }
         ]);
         if (error) {
-            res.status(500).json({ error });
+            const hint = typeof error === 'object' &&
+                error !== null &&
+                'message' in error &&
+                String(error.message || '').toLowerCase().includes('pays')
+                ? 'Exécutez le fichier backend/supabase/add_pays_devise.sql dans le SQL Editor de Supabase.'
+                : undefined;
+            res.status(500).json({
+                message: hint || 'Erreur lors de l\'inscription',
+                error,
+            });
             return;
         }
         res.status(201).json({ data });

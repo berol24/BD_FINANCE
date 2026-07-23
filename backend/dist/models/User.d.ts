@@ -4,6 +4,8 @@ export interface User {
     prenom: string;
     email: string;
     password: string;
+    pays: string;
+    devise: string;
     createdAt: Date;
 }
 //# sourceMappingURL=User.d.ts.map
